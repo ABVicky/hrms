@@ -31,7 +31,7 @@ export default function Header() {
 
         fetchNotifications();
         document.addEventListener('mousedown', handleClickOutside);
-        const interval = setInterval(fetchNotifications, 30000); // Check every 30s
+        const interval = setInterval(fetchNotifications, 15000); // Check every 15s
 
         return () => {
             clearInterval(interval);

@@ -21,7 +21,8 @@ import {
     ChevronRight,
     UserCheck,
     Home,
-    AlertCircle
+    AlertCircle,
+    RefreshCcw
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -43,8 +44,26 @@ export default function DashboardPage() {
                 setLoading(false);
             }
         }
+        
         loadStats();
+
+        // Auto-refresh every 10 seconds for a "real-time" sync experience
+        const interval = setInterval(loadStats, 10000);
+        return () => clearInterval(interval);
     }, [user]);
+
+    const refreshDashboard = async () => {
+        setLoading(true);
+        try {
+            const data = await appsScriptFetch("/dashboard-stats", { 
+                employee_id: user?.employee_id, 
+                role: user?.role 
+            });
+            setStats(data);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (loading) {
         return <div className="space-y-4 animate-pulse">
@@ -112,6 +131,10 @@ export default function DashboardPage() {
                                     <Megaphone size={20} />
                                 </div>
                                 <h2 className="text-lg md:text-xl font-bold text-slate-800">Announcements</h2>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-[9px] font-black uppercase tracking-widest text-emerald-600 ring-1 ring-emerald-100">
+                                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    Live Sync
+                                </div>
                             </div>
                             <button className="text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors group">
                                 View All <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />

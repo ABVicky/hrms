@@ -10,7 +10,10 @@ export async function appsScriptFetch(endpoint: string, params: object = {}, ret
         try {
             const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
-                body: JSON.stringify({ endpoint, params }),
+                body: JSON.stringify({ 
+                    endpoint, 
+                    params: { ...params, _cb: Date.now() } 
+                }),
                 // Adding text/plain prevents Google Apps Script from pre-flighting with CORS OPTIONS which can fail
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8'

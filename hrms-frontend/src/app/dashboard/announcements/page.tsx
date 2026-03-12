@@ -30,6 +30,10 @@ export default function AnnouncementsPage() {
 
     useEffect(() => {
         loadAnnouncements();
+        
+        // Auto-refresh every 10 seconds to keep announcements synced in "real-time"
+        const interval = setInterval(loadAnnouncements, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -72,7 +76,13 @@ export default function AnnouncementsPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900">Manage Announcements</h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-slate-900">Manage Announcements</h1>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-[9px] font-black uppercase tracking-widest text-indigo-600 ring-1 ring-indigo-100">
+                        <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse"></div>
+                        Real-time Sync
+                    </div>
+                </div>
                 <p className="text-sm text-slate-500">Create new announcements to broadcast to all employees.</p>
             </div>
 
