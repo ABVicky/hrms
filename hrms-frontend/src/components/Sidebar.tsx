@@ -11,6 +11,7 @@ import {
     Receipt,
     Users,
     Settings,
+    User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
@@ -95,16 +96,19 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
                                         alt="" 
-                                        className="w-11 h-11 rounded-2xl object-cover ring-2 ring-slate-800/50 bg-slate-800 shadow-sm"
+                                        className="absolute inset-0 w-11 h-11 rounded-2xl object-cover ring-2 ring-slate-800/50 bg-slate-800 shadow-sm z-10 transition-opacity duration-300"
                                         onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
+                                            (e.target as HTMLImageElement).style.opacity = '0';
+                                        }}
+                                        onLoad={(e) => {
+                                            (e.target as HTMLImageElement).style.opacity = '1';
                                         }}
                                     />
                                 ) : null}
-                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 text-indigo-400 flex items-center justify-center font-black text-lg ring-1 ring-indigo-500/20 absolute inset-0 -z-10">
-                                    {user.name.charAt(0)}
+                                <div className="w-11 h-11 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-800/50">
+                                    <User size={20} strokeWidth={2.5} />
                                 </div>
-                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-sm transition-colors duration-500 ${
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-sm z-20 transition-colors duration-500 ${
                                     attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                                     attendanceStatus === 'checked-out' ? 'bg-rose-500' : 
                                     'bg-slate-500'

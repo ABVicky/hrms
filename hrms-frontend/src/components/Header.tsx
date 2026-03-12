@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, LogOut, Check } from "lucide-react";
+import { Bell, LogOut, Check, User } from "lucide-react";
 import { appsScriptFetch } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
@@ -55,19 +55,22 @@ export default function Header() {
             <div className="flex items-center justify-between h-[64px] md:h-[80px] max-w-7xl mx-auto md:px-8">
                 {/* Mobile Left: Profile Pic */}
                 <div className="md:hidden flex-1 flex items-center">
-                    <div className="relative">
+                    <div className="relative w-9 h-9">
                         {user?.profile_picture ? (
                             <img 
                                 src={getImageUrl(user.profile_picture)} 
                                 alt="" 
-                                className="w-9 h-9 rounded-xl object-cover ring-2 ring-white shadow-sm border border-slate-100"
+                                className="absolute inset-0 w-9 h-9 rounded-xl object-cover ring-2 ring-white shadow-sm border border-slate-100 z-10 transition-opacity duration-300"
                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).style.opacity = '0';
+                                }}
+                                onLoad={(e) => {
+                                    (e.target as HTMLImageElement).style.opacity = '1';
                                 }}
                             />
                         ) : null}
-                        <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-lg shadow-indigo-200 ring-2 ring-white absolute inset-0 -z-10">
-                            {user?.name?.charAt(0) || 'U'}
+                        <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shadow-sm ring-2 ring-white">
+                            <User size={18} strokeWidth={2.5} />
                         </div>
                         <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full shadow-sm transition-colors duration-500 ${
                             attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
@@ -153,19 +156,22 @@ export default function Header() {
                             <p className="text-sm font-black text-slate-900 tracking-tight">{user?.name}</p>
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{user?.department}</p>
                         </div>
-                        <div className="relative">
+                        <div className="relative w-10 h-10">
                             {user?.profile_picture ? (
                                 <img 
                                     src={getImageUrl(user.profile_picture)} 
                                     alt="" 
-                                    className="w-10 h-10 rounded-2xl object-cover ring-4 ring-white shadow-sm border border-slate-100"
+                                    className="absolute inset-0 w-10 h-10 rounded-2xl object-cover ring-4 ring-white shadow-sm border border-slate-100 z-10 transition-opacity duration-300"
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).style.opacity = '0';
+                                    }}
+                                    onLoad={(e) => {
+                                        (e.target as HTMLImageElement).style.opacity = '1';
                                     }}
                                 />
                             ) : null}
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-black flex items-center justify-center text-lg shadow-lg shadow-indigo-200 ring-4 ring-white absolute inset-0 -z-10">
-                                {user?.name?.charAt(0) || 'U'}
+                            <div className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center shadow-sm ring-4 ring-white">
+                                <User size={20} strokeWidth={2.5} />
                             </div>
                             <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-white rounded-full shadow-sm transition-colors duration-500 ${
                                 attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 

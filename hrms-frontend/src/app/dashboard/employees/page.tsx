@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
-import { Users, Mail, Plus } from "lucide-react";
+import { Users, Mail, Plus, AlertCircle, User } from "lucide-react";
+import { getImageUrl } from "@/lib/utils";
 
 export default function EmployeesPage() {
     const { user } = useAuth();
@@ -79,8 +80,23 @@ export default function EmployeesPage() {
                                     <tr key={emp.employee_id} className="hover:bg-slate-50 transition">
                                         <td className="px-6 py-4 text-slate-900 font-medium">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs">
-                                                    {emp.name?.charAt(0) || 'U'}
+                                                <div className="relative w-8 h-8 flex-shrink-0">
+                                                    {emp.profile_picture ? (
+                                                        <img 
+                                                            src={getImageUrl(emp.profile_picture)} 
+                                                            alt="" 
+                                                            className="absolute inset-0 w-8 h-8 rounded-full object-cover ring-1 ring-slate-100 shadow-sm z-10 transition-opacity duration-300"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).style.opacity = '0';
+                                                            }}
+                                                            onLoad={(e) => {
+                                                                (e.target as HTMLImageElement).style.opacity = '1';
+                                                            }}
+                                                        />
+                                                    ) : null}
+                                                    <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center border border-slate-100">
+                                                        <User size={14} strokeWidth={2.5} />
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     {emp.name}
@@ -119,5 +135,3 @@ export default function EmployeesPage() {
     );
 }
 
-// Ensure AlertCircle is imported for the Access Denied view
-import { AlertCircle } from "lucide-react";

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
-import { Settings, LogOut, Upload, AlertCircle, Loader2, Info } from "lucide-react";
+import { Settings, LogOut, Upload, AlertCircle, Loader2, Info, User } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -135,12 +135,12 @@ export default function SettingsPage() {
                         )}
 
                         <div className="flex items-center gap-6">
-                            <div className="relative">
+                            <div className="relative w-20 h-20">
                                 {user?.profile_picture ? (
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
                                         alt="" 
-                                        className="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-opacity duration-300"
+                                        className="absolute inset-0 w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-opacity duration-300 z-10"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).style.opacity = '0';
                                         }}
@@ -149,10 +149,10 @@ export default function SettingsPage() {
                                         }}
                                     />
                                 ) : null}
-                                <div className="w-20 h-20 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-2xl border-4 border-slate-50 absolute inset-0 -z-10">
-                                    {user?.name?.charAt(0) || 'U'}
+                                <div className="w-20 h-20 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center border-4 border-slate-50">
+                                    <User size={40} strokeWidth={1.5} />
                                 </div>
-                                <div className={`absolute bottom-0.5 right-0.5 w-5 h-5 border-[4px] border-white rounded-full shadow-sm transition-colors duration-500 ${
+                                <div className={`absolute bottom-0.5 right-0.5 w-5 h-5 border-[4px] border-white rounded-full shadow-sm z-20 transition-colors duration-500 ${
                                     attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                                     attendanceStatus === 'checked-out' ? 'bg-rose-500' : 
                                     'bg-slate-500'
