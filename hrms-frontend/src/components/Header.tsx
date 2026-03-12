@@ -57,12 +57,18 @@ export default function Header() {
                 <div className="md:hidden flex-1 flex items-center">
                     <div className="relative">
                         {user?.profile_picture ? (
-                            <img src={getImageUrl(user.profile_picture)} alt="Profile" className="w-9 h-9 rounded-xl object-cover ring-2 ring-white shadow-sm border border-slate-100" />
-                        ) : (
-                            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-lg shadow-indigo-200 ring-2 ring-white">
-                                {user?.name?.charAt(0) || 'U'}
-                            </div>
-                        )}
+                            <img 
+                                src={getImageUrl(user.profile_picture)} 
+                                alt="" 
+                                className="w-9 h-9 rounded-xl object-cover ring-2 ring-white shadow-sm border border-slate-100"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        ) : null}
+                        <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-lg shadow-indigo-200 ring-2 ring-white absolute inset-0 -z-10">
+                            {user?.name?.charAt(0) || 'U'}
+                        </div>
                         <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full shadow-sm transition-colors duration-500 ${
                             attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                             attendanceStatus === 'checked-out' ? 'bg-rose-500' : 
@@ -149,12 +155,18 @@ export default function Header() {
                         </div>
                         <div className="relative">
                             {user?.profile_picture ? (
-                                <img src={getImageUrl(user.profile_picture)} alt="Profile" className="w-10 h-10 rounded-2xl object-cover ring-4 ring-white shadow-sm border border-slate-100" />
-                            ) : (
-                                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-black flex items-center justify-center text-lg shadow-lg shadow-indigo-200 ring-4 ring-white">
-                                    {user?.name?.charAt(0) || 'U'}
-                                </div>
-                            )}
+                                <img 
+                                    src={getImageUrl(user.profile_picture)} 
+                                    alt="" 
+                                    className="w-10 h-10 rounded-2xl object-cover ring-4 ring-white shadow-sm border border-slate-100"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : null}
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-black flex items-center justify-center text-lg shadow-lg shadow-indigo-200 ring-4 ring-white absolute inset-0 -z-10">
+                                {user?.name?.charAt(0) || 'U'}
+                            </div>
                             <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-white rounded-full shadow-sm transition-colors duration-500 ${
                                 attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                                 attendanceStatus === 'checked-out' ? 'bg-rose-500' : 

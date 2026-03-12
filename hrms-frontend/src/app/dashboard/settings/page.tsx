@@ -137,12 +137,21 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-6">
                             <div className="relative">
                                 {user?.profile_picture ? (
-                                    <img src={getImageUrl(user.profile_picture)} alt="Profile" className="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow-sm" />
-                                ) : (
-                                    <div className="w-20 h-20 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-2xl border-4 border-slate-50">
-                                        {user?.name?.charAt(0) || 'U'}
-                                    </div>
-                                )}
+                                    <img 
+                                        src={getImageUrl(user.profile_picture)} 
+                                        alt="" 
+                                        className="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-opacity duration-300"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.opacity = '0';
+                                        }}
+                                        onLoad={(e) => {
+                                            (e.target as HTMLImageElement).style.opacity = '1';
+                                        }}
+                                    />
+                                ) : null}
+                                <div className="w-20 h-20 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-2xl border-4 border-slate-50 absolute inset-0 -z-10">
+                                    {user?.name?.charAt(0) || 'U'}
+                                </div>
                                 <div className={`absolute bottom-0.5 right-0.5 w-5 h-5 border-[4px] border-white rounded-full shadow-sm transition-colors duration-500 ${
                                     attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                                     attendanceStatus === 'checked-out' ? 'bg-rose-500' : 

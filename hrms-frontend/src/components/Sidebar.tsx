@@ -94,14 +94,16 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                 {user.profile_picture ? (
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
-                                        alt="Profile" 
-                                        className="w-11 h-11 rounded-2xl object-cover ring-2 ring-slate-800/50 bg-slate-800 shadow-sm" 
+                                        alt="" 
+                                        className="w-11 h-11 rounded-2xl object-cover ring-2 ring-slate-800/50 bg-slate-800 shadow-sm"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
                                     />
-                                ) : (
-                                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 text-indigo-400 flex items-center justify-center font-black text-lg ring-1 ring-indigo-500/20">
-                                        {user.name.charAt(0)}
-                                    </div>
-                                )}
+                                ) : null}
+                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 text-indigo-400 flex items-center justify-center font-black text-lg ring-1 ring-indigo-500/20 absolute inset-0 -z-10">
+                                    {user.name.charAt(0)}
+                                </div>
                                 <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-sm transition-colors duration-500 ${
                                     attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
                                     attendanceStatus === 'checked-out' ? 'bg-rose-500' : 

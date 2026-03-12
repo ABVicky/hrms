@@ -15,8 +15,9 @@ export function getImageUrl(url: string | undefined): string | undefined {
         else if (matchIdParam) fileId = matchIdParam[1];
         
         if (fileId) {
-            // Using the uc?export=view method as it's more standard for simple img tags
-            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            // Using the thumbnail service as it's more reliable for embedding than uc?export=view
+            // sz=s1000 ensures a high quality version
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=s1000`;
         }
     }
     
