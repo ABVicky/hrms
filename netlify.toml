@@ -1,9 +1,9 @@
 [build]
   base = "hrms-frontend"
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
-  status = 200
+  to = "/404.html"
+  status = 404
