@@ -31,13 +31,14 @@ export default function DashboardLayout({
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="h-screen overflow-hidden bg-slate-50 flex">
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-            <div className="flex-1 flex flex-col min-w-0 md:ml-72 transition-all duration-300">
+            <div className="flex-1 flex flex-col min-w-0 md:ml-72 h-full overflow-hidden transition-all duration-300">
                 <Header />
 
-                <main className="flex-1 p-3 pb-24 sm:p-6 md:pb-6 lg:p-8 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto overscroll-none p-3 pb-32 sm:p-6 sm:pb-32 md:pb-10 lg:p-8 lg:pb-10"
+                    style={{ WebkitOverflowScrolling: 'touch' }}>
                     {children}
                 </main>
 

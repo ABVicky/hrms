@@ -1,0 +1,638 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { appsScriptFetch } from "@/lib/api";
+import {
+    BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer, ReferenceLine, Cell
+} from "recharts";
+import {
+    Users, Clock, AlertTriangle, TrendingUp, Home, MapPin,
+    X, ChevronRight, Calendar, Loader2, ArrowLeft, BarChart2,
+    CheckCircle2, XCircle, User
+} from "lucide-react";
+import Link from "next/link";
+import { getImageUrl } from "@/lib/utils";
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+interface DayData {
+    date: string;
+    working_hours: number;
+    mode: 'office' | 'wfh';
+    check_in: string;
+    check_out: string;
+    is_late: boolean;
+    late_by_minutes: number;
+    attendance_status: string;
+}
+
+interface Stats {
+    total_present: number;
+    total_late: number;
+    avg_hours: number;
+    total_hours: number;
+    wfh_days: number;
+    office_days: number;
+}
+
+interface EmployeeAnalytics {
+    employee_id: string;
+    name: string;
+    department: string;
+    role: string;
+    profile_picture?: string;
+    seven_day_data: DayData[];
+    thirty_day_data: DayData[];
+    stats_30: Stats;
+    stats_7: Stats;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const fmt = (iso: string) => {
+    if (!iso || iso === "---") return "—";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const fmtDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+};
+
+const fmtDay = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { weekday: 'short' });
+};
+
+// Build last-7-days skeleton (fill missing dates as absent)
+function buildWeekGrid(data: DayData[]): (DayData & { absent?: boolean })[] {
+    const map: Record<string, DayData> = {};
+    data.forEach(d => { map[d.date] = d; });
+
+    const result: (DayData & { absent?: boolean })[] = [];
+    for (let i = 6; i >= 0; i--) {
+        const dt = new Date();
+        dt.setDate(dt.getDate() - i);
+        const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        if (map[key]) {
+            result.push({ ...map[key], absent: false });
+        } else {
+            result.push({
+                date: key, working_hours: 0, mode: 'office',
+                check_in: '', check_out: '', is_late: false, late_by_minutes: 0,
+                attendance_status: 'absent', absent: true
+            });
+        }
+    }
+    return result;
+}
+
+// Build 30-day chart data
+function buildChartData(data: DayData[]) {
+    return data.map(d => ({
+        date: fmtDate(d.date),
+        day: fmtDay(d.date),
+        hours: d.working_hours,
+        late: d.is_late ? d.late_by_minutes : 0,
+        is_late: d.is_late,
+        absent: false
+    }));
+}
+
+// ─── Custom Tooltips ─────────────────────────────────────────────────────────
+
+const HoursTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="bg-white border border-slate-100 rounded-xl shadow-xl p-3 text-xs">
+            <p className="font-black text-slate-900 mb-1">{payload[0]?.payload?.day}, {label}</p>
+            <p className="text-indigo-600 font-bold">{payload[0]?.value?.toFixed(1)} hrs worked</p>
+        </div>
+    );
+};
+
+const LateTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="bg-white border border-slate-100 rounded-xl shadow-xl p-3 text-xs">
+            <p className="font-black text-slate-900 mb-1">{payload[0]?.payload?.day}, {label}</p>
+            {payload[0]?.value > 0
+                ? <p className="text-amber-600 font-bold">Late by {payload[0]?.value} min</p>
+                : <p className="text-emerald-600 font-bold">On time ✓</p>}
+        </div>
+    );
+};
+
+// ─── Employee Detail Modal ────────────────────────────────────────────────────
+
+function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () => void }) {
+    const chartData = buildChartData(emp.thirty_day_data);
+    const s = emp.stats_30;
+    const totalWorkingDays = 30;
+    const absenceDays = Math.max(0, totalWorkingDays - s.total_present);
+
+    return (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-start justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl w-full max-w-3xl my-6 shadow-2xl overflow-hidden">
+
+                {/* Header */}
+                <div className="relative bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+                        <X size={18} />
+                    </button>
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-white/20 flex items-center justify-center text-xl font-black shadow-xl overflow-hidden">
+                            {emp.profile_picture ? (
+                                <img src={getImageUrl(emp.profile_picture)} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : (
+                                <User size={24} />
+                            )}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black tracking-tight">{emp.name}</h2>
+                            <p className="text-indigo-200 text-sm font-bold">{emp.department} · {emp.role}</p>
+                            <p className="text-indigo-300 text-xs mt-0.5">ID: {emp.employee_id}</p>
+                        </div>
+                    </div>
+                    {/* Stat pills */}
+                    <div className="grid grid-cols-4 gap-3 mt-6 relative z-10">
+                        {[
+                            { label: 'Present', value: s.total_present, color: 'bg-emerald-500/20 text-emerald-200' },
+                            { label: 'Absent', value: absenceDays, color: 'bg-rose-500/20 text-rose-200' },
+                            { label: 'Late', value: s.total_late, color: 'bg-amber-500/20 text-amber-200' },
+                            { label: 'Avg Hrs', value: `${s.avg_hours}h`, color: 'bg-blue-500/20 text-blue-200' },
+                        ].map(item => (
+                            <div key={item.label} className={`${item.color} rounded-2xl p-3 text-center`}>
+                                <p className="text-2xl font-black">{item.value}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 opacity-80">{item.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                    {/* Mode breakdown */}
+                    <div className="flex gap-3">
+                        <div className="flex-1 flex items-center gap-3 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <MapPin size={18} className="text-indigo-600" />
+                            <div>
+                                <p className="font-black text-indigo-900 text-lg">{s.office_days}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Office Days</p>
+                            </div>
+                        </div>
+                        <div className="flex-1 flex items-center gap-3 p-4 bg-cyan-50 rounded-2xl border border-cyan-100">
+                            <Home size={18} className="text-cyan-600" />
+                            <div>
+                                <p className="font-black text-cyan-900 text-lg">{s.wfh_days}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-cyan-500">WFH Days</p>
+                            </div>
+                        </div>
+                        <div className="flex-1 flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <Clock size={18} className="text-slate-600" />
+                            <div>
+                                <p className="font-black text-slate-900 text-lg">{s.total_hours}h</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Hours</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Daily Work Hours Bar Chart */}
+                    <div>
+                        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <BarChart2 size={16} className="text-indigo-500" />
+                            Daily Work Hours — Last 30 Days
+                        </h3>
+                        {chartData.length > 0 ? (
+                            <div className="h-48">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData} barSize={10} margin={{ left: -20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 12]} />
+                                        <Tooltip content={<HoursTooltip />} />
+                                        <ReferenceLine y={8} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '8h', position: 'right', fontSize: 9, fill: '#94a3b8' }} />
+                                        <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
+                                            {chartData.map((entry, i) => (
+                                                <Cell key={i} fill={entry.hours >= 8 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="h-48 flex items-center justify-center text-slate-400 text-sm font-medium bg-slate-50 rounded-2xl">No data available</div>
+                        )}
+                    </div>
+
+                    {/* Late Arrivals Line Chart */}
+                    <div>
+                        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <AlertTriangle size={16} className="text-amber-500" />
+                            Late Arrival Trend (minutes late) — Last 30 Days
+                        </h3>
+                        {chartData.length > 0 ? (
+                            <div className="h-40">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData} margin={{ left: -20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                        <Tooltip content={<LateTooltip />} />
+                                        <ReferenceLine y={0} stroke="#e2e8f0" />
+                                        <Line dataKey="late" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} activeDot={{ r: 5 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="h-40 flex items-center justify-center text-slate-400 text-sm font-medium bg-slate-50 rounded-2xl">No data available</div>
+                        )}
+                    </div>
+
+                    {/* Recent Days List */}
+                    <div>
+                        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <Calendar size={16} className="text-slate-500" />
+                            Last 7 Days
+                        </h3>
+                        <div className="space-y-2">
+                            {buildWeekGrid(emp.seven_day_data).map(day => (
+                                <div key={day.date} className={`flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${day.absent ? 'bg-rose-50 border-rose-100' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
+                                    <div className="flex items-center gap-3">
+                                        {day.absent
+                                            ? <XCircle size={16} className="text-rose-400 shrink-0" />
+                                            : <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900">{fmtDate(day.date)} <span className="text-slate-400 font-bold">({fmtDay(day.date)})</span></p>
+                                            {!day.absent && <p className="text-[10px] text-slate-400 font-bold">{fmt(day.check_in)} → {fmt(day.check_out)}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-right">
+                                        {!day.absent && (
+                                            <>
+                                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border border-cyan-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'}`}>
+                                                    {day.mode}
+                                                </span>
+                                                {day.is_late && (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
+                                                        +{day.late_by_minutes}m late
+                                                    </span>
+                                                )}
+                                                <span className="text-sm font-black text-slate-700 tabular-nums w-12 text-right">{day.working_hours.toFixed(1)}h</span>
+                                            </>
+                                        )}
+                                        {day.absent && <span className="text-xs font-black text-rose-400 uppercase tracking-wider">Absent</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Employee Card (HR Grid) ──────────────────────────────────────────────────
+
+function EmployeeCard({ emp, onClick }: { emp: EmployeeAnalytics; onClick: () => void }) {
+    const week = buildWeekGrid(emp.seven_day_data);
+    const s7 = emp.stats_7;
+
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][Symbol.iterator];
+
+    return (
+        <button
+            onClick={onClick}
+            className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 text-left hover:shadow-xl hover:shadow-indigo-500/8 hover:-translate-y-1 transition-all duration-300 group w-full"
+        >
+            {/* Employee info */}
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-600 font-black text-sm shrink-0 overflow-hidden ring-1 ring-indigo-100">
+                    {emp.profile_picture ? (
+                        <img src={getImageUrl(emp.profile_picture)} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                        emp.name.charAt(0).toUpperCase()
+                    )}
+                </div>
+                <div className="min-w-0">
+                    <p className="font-black text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">{emp.name}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{emp.department}</p>
+                </div>
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors ml-auto shrink-0 group-hover:translate-x-0.5" />
+            </div>
+
+            {/* 7-day grid */}
+            <div className="grid grid-cols-7 gap-1 mb-4">
+                {week.map((day, i) => (
+                    <div key={day.date} className="flex flex-col items-center gap-1">
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">
+                            {new Date(day.date).toLocaleDateString('en-US', { weekday: 'narrow' })}
+                        </span>
+                        <div className={`w-full aspect-square rounded-lg transition-all ${
+                            day.absent ? 'bg-rose-100' :
+                            day.is_late ? 'bg-amber-400' :
+                            day.mode === 'wfh' ? 'bg-cyan-400' :
+                            'bg-emerald-400'
+                        }`} title={`${day.date}: ${day.absent ? 'Absent' : `${day.working_hours.toFixed(1)}h${day.is_late ? ' (late)' : ''}`}`} />
+                        <span className={`text-[8px] font-bold ${
+                            day.absent ? 'text-rose-400' : 'text-slate-400'
+                        }`}>
+                            {day.absent ? '—' : `${day.working_hours.toFixed(0)}h`}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Legend + stats */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-emerald-400" /><span className="text-[9px] text-slate-400 font-bold">Office</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-cyan-400" /><span className="text-[9px] text-slate-400 font-bold">WFH</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-amber-400" /><span className="text-[9px] text-slate-400 font-bold">Late</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-rose-100" /><span className="text-[9px] text-slate-400 font-bold">Absent</span></div>
+                </div>
+                <div className="flex items-center gap-2">
+                    {s7.total_late > 0 && (
+                        <span className="text-[9px] font-black px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full">
+                            {s7.total_late} late
+                        </span>
+                    )}
+                    <span className="text-[10px] font-black text-slate-500">
+                        {s7.total_present}/7 days
+                    </span>
+                </div>
+            </div>
+        </button>
+    );
+}
+
+// ─── Self Analytics Section ───────────────────────────────────────────────────
+
+function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
+    const chartData = buildChartData(emp.thirty_day_data);
+    const s = emp.stats_30;
+    const week = buildWeekGrid(emp.seven_day_data);
+
+    return (
+        <div className="space-y-6">
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { label: 'Days Present', value: s.total_present, sub: 'last 30 days', color: 'indigo', icon: CheckCircle2 },
+                    { label: 'Avg Hours/Day', value: `${s.avg_hours}h`, sub: 'standard 8h', color: 'violet', icon: Clock },
+                    { label: 'Late Arrivals', value: s.total_late, sub: 'after 10:15 AM', color: 'amber', icon: AlertTriangle },
+                    { label: 'WFH Days', value: s.wfh_days, sub: `${s.office_days} office`, color: 'cyan', icon: Home },
+                ].map(stat => {
+                    const Icon = stat.icon;
+                    const colorMap: Record<string, string> = {
+                        indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                        violet: 'bg-violet-50 text-violet-600 border-violet-100',
+                        amber: 'bg-amber-50 text-amber-600 border-amber-100',
+                        cyan: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+                    };
+                    const textColor: Record<string, string> = {
+                        indigo: 'text-indigo-700', violet: 'text-violet-700', amber: 'text-amber-700', cyan: 'text-cyan-700'
+                    };
+                    return (
+                        <div key={stat.label} className={`rounded-3xl border p-5 ${colorMap[stat.color]} flex flex-col gap-2`}>
+                            <Icon size={20} className="opacity-70" />
+                            <p className={`text-3xl font-black tracking-tight ${textColor[stat.color]}`}>{stat.value}</p>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest">{stat.label}</p>
+                                <p className="text-[10px] opacity-60 font-bold mt-0.5">{stat.sub}</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Work Hours Chart */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <BarChart2 size={16} className="text-indigo-500" />
+                    Daily Work Hours — Last 30 Days
+                </h3>
+                {chartData.length > 0 ? (
+                    <div className="h-56">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} barSize={12} margin={{ left: -20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
+                                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 12]} />
+                                <Tooltip content={<HoursTooltip />} />
+                                <ReferenceLine y={8} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '8h target', position: 'insideTopRight', fontSize: 9, fill: '#94a3b8' }} />
+                                <Bar dataKey="hours" radius={[5, 5, 0, 0]}>
+                                    {chartData.map((entry, i) => (
+                                        <Cell key={i} fill={entry.hours >= 8 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-56 flex items-center justify-center bg-slate-50 rounded-2xl text-slate-400 text-sm font-medium">No attendance records yet</div>
+                )}
+                <div className="flex items-center gap-4 mt-4">
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-indigo-600" /><span className="text-[10px] text-slate-500 font-bold">≥ 8h (Full Day)</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-indigo-300" /><span className="text-[10px] text-slate-500 font-bold">Partial Day</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-slate-200" /><span className="text-[10px] text-slate-500 font-bold">Absent</span></div>
+                </div>
+            </div>
+
+            {/* Late Arrivals Trend */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-amber-500" />
+                    Late Arrival Trend — Last 30 Days
+                </h3>
+                {chartData.length > 0 ? (
+                    <div className="h-44">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ left: -20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
+                                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                <Tooltip content={<LateTooltip />} />
+                                <ReferenceLine y={0} stroke="#f1f5f9" />
+                                <Line dataKey="late" stroke="#f59e0b" strokeWidth={2.5} dot={(props: any) => {
+                                    const { cx, cy, payload } = props;
+                                    return payload.late > 0
+                                        ? <circle key={`dot-${cx}`} cx={cx} cy={cy} r={4} fill="#f59e0b" stroke="white" strokeWidth={2} />
+                                        : <circle key={`dot-${cx}`} cx={cx} cy={cy} r={2} fill="#d1fae5" stroke="#10b981" strokeWidth={1.5} />;
+                                }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-44 flex items-center justify-center bg-slate-50 rounded-2xl text-slate-400 text-sm font-medium">No data available</div>
+                )}
+            </div>
+
+            {/* 7-day mini timeline */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Calendar size={16} className="text-slate-500" /> Last 7 Days
+                </h3>
+                <div className="space-y-2">
+                    {week.map(day => (
+                        <div key={day.date} className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${day.absent ? 'bg-rose-50 border-rose-100' : 'bg-white border-slate-100'}`}>
+                            <div className="flex items-center gap-3">
+                                {day.absent ? <XCircle size={15} className="text-rose-400 shrink-0" /> : <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />}
+                                <div>
+                                    <p className="text-sm font-black text-slate-900">{fmtDate(day.date)} <span className="text-slate-400 font-bold">({fmtDay(day.date)})</span></p>
+                                    {!day.absent && <p className="text-[10px] text-slate-400 font-bold">{fmt(day.check_in)} → {fmt(day.check_out)}</p>}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!day.absent && (
+                                    <>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>{day.mode}</span>
+                                        {day.is_late && <span className="text-[9px] font-black px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full">+{day.late_by_minutes}m late</span>}
+                                        <span className="font-black text-slate-700 text-sm tabular-nums w-10 text-right">{day.working_hours.toFixed(1)}h</span>
+                                    </>
+                                )}
+                                {day.absent && <span className="text-xs font-black text-rose-400">Absent</span>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function AttendanceAnalyticsPage() {
+    const { user } = useAuth();
+    const [data, setData] = useState<EmployeeAnalytics[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedEmp, setSelectedEmp] = useState<EmployeeAnalytics | null>(null);
+    const [search, setSearch] = useState('');
+
+    const isHR = user?.role === 'Super Admin' || user?.role === 'HR Admin' || user?.role === 'Manager';
+
+    useEffect(() => {
+        if (!user) return;
+        appsScriptFetch('/attendance-analytics', {
+            employee_id: user.employee_id,
+            role: user.role
+        }).then((res: any) => {
+            setData(res || []);
+        }).catch(console.error)
+          .finally(() => setLoading(false));
+    }, [user]);
+
+    const selfData = data.find(d => String(d.employee_id) === String(user?.employee_id)) || data[0];
+
+    const filtered = isHR
+        ? data.filter(e =>
+            e.name?.toLowerCase().includes(search.toLowerCase()) ||
+            e.department?.toLowerCase().includes(search.toLowerCase())
+          )
+        : data;
+
+    return (
+        <div className="max-w-6xl mx-auto space-y-6 page-transition pb-10">
+
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                    <Link href="/dashboard/attendance"
+                        className="p-2 rounded-xl bg-white border border-slate-100 hover:bg-slate-50 transition-colors shadow-sm">
+                        <ArrowLeft size={18} className="text-slate-600" />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                            {isHR ? 'Team Attendance Analytics' : 'My Attendance Analytics'}
+                        </h1>
+                        <p className="text-slate-500 font-medium text-sm mt-0.5">
+                            {isHR ? `Overview of all employees · Last 30 days` : `Your personal attendance overview · Last 30 days`}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-2xl text-xs font-black uppercase tracking-widest">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Data
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                    <Loader2 size={40} className="text-indigo-500 animate-spin" />
+                    <p className="text-slate-500 font-bold">Loading analytics…</p>
+                </div>
+            ) : (
+                <>
+                    {/* HR View: grid of employee cards */}
+                    {isHR && (
+                        <>
+                            {/* Summary bar */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: 'Total Employees', value: data.length, icon: Users, color: 'indigo' },
+                                    { label: 'Present Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0])).length, icon: CheckCircle2, color: 'emerald' },
+                                    { label: 'Late This Week', value: data.reduce((s, e) => s + e.stats_7.total_late, 0), icon: AlertTriangle, color: 'amber' },
+                                    { label: 'WFH Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0] && d.mode === 'wfh')).length, icon: Home, color: 'cyan' },
+                                ].map(stat => {
+                                    const Icon = stat.icon;
+                                    const cmap: Record<string, string> = { indigo: 'bg-indigo-600', emerald: 'bg-emerald-500', amber: 'bg-amber-500', cyan: 'bg-cyan-500' };
+                                    return (
+                                        <div key={stat.label} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                                            <div className={`p-3 rounded-2xl ${cmap[stat.color]} text-white shadow-lg shrink-0`}>
+                                                <Icon size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Search */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    placeholder="Search by name or department…"
+                                    className="w-full pl-4 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                                />
+                            </div>
+
+                            {/* Employee Cards Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {filtered.map(emp => (
+                                    <EmployeeCard key={emp.employee_id} emp={emp} onClick={() => setSelectedEmp(emp)} />
+                                ))}
+                                {filtered.length === 0 && (
+                                    <div className="col-span-3 py-16 text-center text-slate-400 font-medium">No employees found.</div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Employee Self-View */}
+                    {!isHR && selfData && (
+                        <SelfAnalytics emp={selfData} />
+                    )}
+
+                    {!isHR && !selfData && (
+                        <div className="py-24 text-center text-slate-400 font-medium">No attendance records found for the last 30 days.</div>
+                    )}
+                </>
+            )}
+
+            {/* Employee Detail Modal */}
+            {selectedEmp && (
+                <EmployeeModal emp={selectedEmp} onClose={() => setSelectedEmp(null)} />
+            )}
+        </div>
+    );
+}

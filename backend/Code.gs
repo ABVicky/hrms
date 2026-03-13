@@ -15,7 +15,7 @@ function setupDatabase() {
     if (name === 'employees') {
       expectedHeaders = ['employee_id', 'name', 'email', 'phone', 'department', 'role', 'salary', 'employee_type', 'manager_id', 'joining_date', 'account_status', 'contract_end_date', 'profile_picture', 'password'];
     } else if (name === 'attendance') {
-      expectedHeaders = ['attendance_id', 'employee_id', 'employee_name', 'date', 'check_in', 'check_out', 'mode', 'latitude', 'longitude', 'working_hours', 'attendance_status'];
+      expectedHeaders = ['attendance_id', 'employee_id', 'employee_name', 'date', 'check_in', 'check_out', 'mode', 'latitude', 'longitude', 'selfie_url', 'working_hours', 'attendance_status'];
     } else if (name === 'leave_requests') {
       expectedHeaders = ['request_id', 'employee_id', 'employee_name', 'leave_type', 'start_date', 'end_date', 'reason', 'status', 'approved_by', 'manager_comment'];
     } else if (name === 'expenses') {
@@ -143,6 +143,9 @@ function handleRequest(e, method) {
         break;
       case '/get-user-requests':
         result = getUserRequests(params);
+        break;
+      case '/attendance-analytics':
+        result = getAttendanceAnalytics(params);
         break;
       default:
         throw new Error('[v' + VERSION + '] Unknown endpoint: ' + endpoint);
@@ -276,7 +279,7 @@ function handleLogin(params) {
 }
 
 function handleCheckin(params) {
-  const { employee_id, lat, lng, mode } = params;
+  const { employee_id, lat, lng, mode, selfie_base64, selfie_mime, selfie_filename } = params;
   if (!employee_id) throw new Error("Employee ID required");
   
   const today = getTodayStr();
@@ -302,6 +305,32 @@ function handleCheckin(params) {
   });
   if (closedRecordToday) throw new Error("[v" + VERSION + "] Already completed session for today");
   
+  // Upload WFH selfie to Drive if provided
+  let selfieUrl = '';
+  if (mode === 'wfh' && selfie_base64 && selfie_mime && selfie_filename) {
+    try {
+      const splitBase = selfie_base64.split(',');
+      const decoded = Utilities.base64Decode(splitBase[1] || splitBase[0]);
+      const blob = Utilities.newBlob(decoded, selfie_mime, selfie_filename);
+      
+      // Get or create the WFH Selfies folder
+      const folderIterator = DriveApp.getFoldersByName("HRMS_WFH_Selfies");
+      let folder;
+      if (folderIterator.hasNext()) {
+        folder = folderIterator.next();
+      } else {
+        folder = DriveApp.createFolder("HRMS_WFH_Selfies");
+      }
+      
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      selfieUrl = "https://drive.google.com/uc?id=" + file.getId();
+    } catch (uploadErr) {
+      Logger.log("Selfie upload failed: " + uploadErr.message);
+      // Don't block check-in if upload fails
+    }
+  }
+
   // Store check-in
   const newAttendance = {
     attendance_id: Utilities.getUuid(),
@@ -313,6 +342,7 @@ function handleCheckin(params) {
     mode: mode || 'office',
     latitude: lat || '',
     longitude: lng || '',
+    selfie_url: selfieUrl,
     working_hours: '',
     attendance_status: (mode === 'wfh') ? 'wfh' : 'present'
   };
@@ -990,3 +1020,112 @@ function handleApproveSalary(params) {
 // -------------------------------------------------------------
 // 1. processMonthlySalaries -> Monthly, 1st day, 00:00
 // 2. releaseSalarySlips -> Monthly, 5th day, 10:00
+
+// -------------------------------------------------------------
+// Attendance Analytics
+// -------------------------------------------------------------
+function getAttendanceAnalytics(params) {
+  const { employee_id, role } = params;
+
+  const LATE_HOUR = 10;
+  const LATE_MIN = 15;
+
+  function isLate(checkInIso) {
+    if (!checkInIso || String(checkInIso).trim() === '' || String(checkInIso).trim() === '---') return false;
+    const d = new Date(checkInIso);
+    if (isNaN(d.getTime())) return false;
+    return d.getHours() > LATE_HOUR || (d.getHours() === LATE_HOUR && d.getMinutes() > LATE_MIN);
+  }
+
+  function computeDayData(a) {
+    const lateVal = isLate(a.check_in);
+    const hours = parseFloat(a.working_hours) || 0;
+    let lateBy = 0;
+    if (lateVal && a.check_in) {
+      const d = new Date(a.check_in);
+      const expectedMinutes = LATE_HOUR * 60 + LATE_MIN;
+      const actualMinutes = d.getHours() * 60 + d.getMinutes();
+      lateBy = Math.max(0, actualMinutes - expectedMinutes);
+    }
+    return {
+      date: a.date,
+      working_hours: parseFloat(hours.toFixed(2)),
+      mode: a.mode || 'office',
+      check_in: a.check_in || '',
+      check_out: a.check_out || '',
+      is_late: lateVal,
+      late_by_minutes: lateBy,
+      attendance_status: a.attendance_status || 'present'
+    };
+  }
+
+  function computeStats(dayData) {
+    const totalPresent = dayData.length;
+    const totalLate = dayData.filter(d => d.is_late).length;
+    const totalHours = dayData.reduce((s, d) => s + d.working_hours, 0);
+    const avgHours = totalPresent > 0 ? parseFloat((totalHours / totalPresent).toFixed(1)) : 0;
+    const wfhDays = dayData.filter(d => d.mode === 'wfh').length;
+    const officeDays = dayData.filter(d => d.mode === 'office').length;
+    return { total_present: totalPresent, total_late: totalLate, avg_hours: avgHours, total_hours: parseFloat(totalHours.toFixed(2)), wfh_days: wfhDays, office_days: officeDays };
+  }
+
+  const allAttendance = getSheetData('attendance');
+  const allEmployees = getSheetData('employees').filter(e => e.account_status !== 'inactive');
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  function getEmployeeData(empId) {
+    const records = allAttendance.filter(a => {
+      if (String(a.employee_id).trim() !== String(empId).trim()) return false;
+      const dt = new Date(a.date);
+      return !isNaN(dt.getTime()) && dt >= thirtyDaysAgo;
+    }).map(computeDayData).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const sevenDay = records.filter(d => new Date(d.date) >= sevenDaysAgo);
+
+    return {
+      thirty_day_data: records,
+      seven_day_data: sevenDay,
+      stats_30: computeStats(records),
+      stats_7: computeStats(sevenDay)
+    };
+  }
+
+  const isHR = role === 'Super Admin' || role === 'HR Admin' || role === 'Manager';
+
+  if (isHR) {
+    // Return summary for all employees (30d data + 7d cards)
+    return allEmployees.map(emp => {
+      const data = getEmployeeData(emp.employee_id);
+      return {
+        employee_id: emp.employee_id,
+        name: emp.name,
+        department: emp.department,
+        role: emp.role,
+        profile_picture: emp.profile_picture || '',
+        seven_day_data: data.seven_day_data,
+        thirty_day_data: data.thirty_day_data,
+        stats_30: data.stats_30,
+        stats_7: data.stats_7
+      };
+    });
+  } else {
+    // Self data only
+    const emp = allEmployees.find(e => String(e.employee_id) === String(employee_id)) || {};
+    const data = getEmployeeData(employee_id);
+    return [{
+      employee_id: employee_id,
+      name: emp.name || '',
+      department: emp.department || '',
+      role: emp.role || '',
+      seven_day_data: data.seven_day_data,
+      thirty_day_data: data.thirty_day_data,
+      stats_30: data.stats_30,
+      stats_7: data.stats_7
+    }];
+  }
+}

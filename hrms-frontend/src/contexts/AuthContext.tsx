@@ -25,7 +25,7 @@ interface AuthContextType {
     updateUser: (updates: Partial<User>) => void;
     attendanceStatus: 'checked-in' | 'checked-out' | 'none';
     refreshAttendanceStatus: () => Promise<void>;
-    performAttendanceAction: (action: 'checkin' | 'checkout', mode?: 'office' | 'wfh') => Promise<any>;
+    performAttendanceAction: (action: 'checkin' | 'checkout', mode?: 'office' | 'wfh', lat?: number, lng?: number, selfie_base64?: string, selfie_mime?: string, selfie_filename?: string) => Promise<any>;
     isAuthenticated: boolean;
 }
 
@@ -68,14 +68,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await fetchInitialStatus(user.employee_id);
     };
 
-    const performAttendanceAction = async (action: 'checkin' | 'checkout', checkinMode: 'office' | 'wfh' = 'wfh') => {
+    const performAttendanceAction = async (action: 'checkin' | 'checkout', checkinMode: 'office' | 'wfh' = 'wfh', lat?: number, lng?: number, selfie_base64?: string, selfie_mime?: string, selfie_filename?: string) => {
         if (!user) return;
         try {
             const endpoint = action === 'checkin' ? '/checkin' : '/checkout';
-            const res = await appsScriptFetch(endpoint, {
+            const payload: any = {
                 employee_id: user.employee_id,
                 mode: checkinMode
-            });
+            };
+            if (lat !== undefined) payload.lat = lat;
+            if (lng !== undefined) payload.lng = lng;
+            if (selfie_base64) payload.selfie_base64 = selfie_base64;
+            if (selfie_mime) payload.selfie_mime = selfie_mime;
+            if (selfie_filename) payload.selfie_filename = selfie_filename;
+            const res = await appsScriptFetch(endpoint, payload);
             await refreshAttendanceStatus();
             return res;
         } catch (err) {

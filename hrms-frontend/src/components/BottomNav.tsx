@@ -20,7 +20,7 @@ export default function BottomNav({ setIsSidebarOpen }: { setIsSidebarOpen: (val
                 {/* Subtle top glow line */}
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
                 
-                <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-2 pt-1 pb-safe-area shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+                <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-2 pt-1 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
                     <div className="flex items-center justify-around h-16">
                         {navItems.map((item) => {
                             const Icon = item.icon;
