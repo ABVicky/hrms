@@ -55,10 +55,12 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-slate-300 transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow-2xl`}>
                 <div className="flex items-center justify-between px-6 h-24 border-b border-slate-900">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <LayoutDashboard className="text-white" size={24} />
-                        </div>
-                        <span className="font-black text-xl tracking-tight text-white">HRMS<span className="text-indigo-500">.</span></span>
+                        <img 
+                            src="/logo.png" 
+                            alt="HRMS Logo" 
+                            className="w-10 h-10 object-contain"
+                        />
+                        <span className="font-black text-xl tracking-tight text-white uppercase">HRMS<span className="text-indigo-500">.</span></span>
                     </div>
 
                 </div>

@@ -1,36 +1,22 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HRMS - Digital Agency Management System
 
-## Getting Started
+A Progressive Web App (PWA) built with Next.js and Google Apps Script to manage human resources, attendance, leaves, and expenses.
 
-First, run the development server:
+## Features
+- **Real-time Attendance**: Check-in and check-out with location tracking.
+- **Announcement System**: Broadcast important news with auto-cleanup after 2 days.
+- **Leave Management**: Submit and track leave requests with manager approval flow.
+- **Expense Tracking**: Upload receipts and track reimbursement status.
+- **Employee Directory**: Manage staff profiles and roles.
+- **PWA Experience**: Installable on mobile and desktop devices.
+- **Real-time Sync**: Automatic data synchronization every 10 seconds.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech Stack
+- **Frontend**: Next.js, Tailwind CSS, Lucide Icons.
+- **Backend**: Google Apps Script (Google Sheets as Database).
+- **Authentication**: Custom AuthContext with persistent sessions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+1. Configure `.env.local` with `NEXT_PUBLIC_APPS_SCRIPT_URL`.
+2. Run `npm run dev` to start the local server.
+3. Deploy the backend code in `backend/Code.gs` as a Google Apps Script Web App.

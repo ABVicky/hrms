@@ -81,8 +81,9 @@ export default function Header() {
                 </div>
 
                 {/* Mobile Center: Title */}
-                <div className="md:hidden absolute left-1/2 transform -translate-x-1/2 font-black text-xl text-slate-950 tracking-tighter flex items-center gap-2">
-                    HRMS<span className="text-indigo-600">.</span>
+                <div className="md:hidden absolute left-1/2 transform -translate-x-1/2 font-black text-xl text-slate-950 tracking-tighter flex items-center gap-1.5">
+                    <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
+                    <span className="uppercase">HRMS<span className="text-indigo-600">.</span></span>
                 </div>
 
                 {/* Desktop spacer */}

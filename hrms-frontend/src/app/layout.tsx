@@ -3,14 +3,37 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import NotificationManager from "@/components/NotificationManager";
+import PWAHandler from "@/components/PWAHandler";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "HRMS Portal",
   description: "Progressive Web App HR Management System",
-  manifest: "/manifest.webmanifest",
-  themeColor: "#0f172a",
+  manifest: "/manifest",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HRMS Portal",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: "#4f46e5",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -23,6 +46,8 @@ export default function RootLayout({
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen`}>
         <AuthProvider>
           <NotificationManager />
+          <PWAHandler />
+          <InstallPrompt />
           {children}
         </AuthProvider>
       </body>
