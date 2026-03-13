@@ -2,7 +2,7 @@ const VERSION = "1.3";
 
 function setupDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheets = ['employees', 'attendance', 'leave_requests', 'expenses', 'wfh_requests', 'announcements', 'notifications'];
+  const sheets = ['employees', 'attendance', 'leave_requests', 'expenses', 'wfh_requests', 'announcements', 'notifications', 'requests', 'salary_slips', 'projects', 'tasks', 'personal_todos'];
   
   sheets.forEach(name => {
     let sheet = ss.getSheetByName(name);
@@ -30,6 +30,12 @@ function setupDatabase() {
       expectedHeaders = ['id', 'user_id', 'employee_name', 'form_type', 'title', 'department_responsible', 'status', 'submitted_at', 'updated_at', 'reviewed_by'];
     } else if (name === 'salary_slips') {
       expectedHeaders = ['slip_id', 'employee_id', 'employee_name', 'department', 'month_year', 'total_full_days', 'total_half_days', 'total_payable_days', 'basic_salary', 'adjustments', 'fines', 'final_amount', 'status', 'generated_date', 'released_date'];
+    } else if (name === 'projects') {
+      expectedHeaders = ['project_id', 'department', 'project_group', 'name', 'description', 'status', 'created_at', 'created_by'];
+    } else if (name === 'tasks') {
+      expectedHeaders = ['task_id', 'project_id', 'title', 'description', 'assignee', 'status', 'due_date', 'priority', 'subtasks', 'comments', 'created_by', 'created_at'];
+    } else if (name === 'personal_todos') {
+      expectedHeaders = ['todo_id', 'employee_id', 'title', 'description', 'status', 'due_date', 'created_at'];
     }
 
     if (expectedHeaders.length > 0) {
@@ -146,6 +152,36 @@ function handleRequest(e, method) {
         break;
       case '/attendance-analytics':
         result = getAttendanceAnalytics(params);
+        break;
+      case '/get-projects':
+        result = getProjects(params);
+        break;
+      case '/create-project':
+        result = handleCreateProject(params);
+        break;
+      case '/get-tasks':
+        result = getTasks(params);
+        break;
+      case '/create-task':
+        result = handleCreateTask(params);
+        break;
+      case '/update-task':
+        result = handleUpdateTask(params);
+        break;
+      case '/add-task-comment':
+        result = handleAddTaskComment(params);
+        break;
+      case '/get-personal-todos':
+        result = handleGetPersonalTodos(params);
+        break;
+      case '/create-personal-todo':
+        result = handleCreatePersonalTodo(params);
+        break;
+      case '/update-personal-todo':
+        result = handleUpdatePersonalTodo(params);
+        break;
+      case '/delete-personal-todo':
+        result = handleDeletePersonalTodo(params);
         break;
       default:
         throw new Error('[v' + VERSION + '] Unknown endpoint: ' + endpoint);
@@ -1128,4 +1164,183 @@ function getAttendanceAnalytics(params) {
       stats_7: data.stats_7
     }];
   }
+}
+
+// -------------------------------------------------------------
+// Work Management Module
+// -------------------------------------------------------------
+
+function getProjects(params) {
+  const { department, employee_id, role } = params;
+  let projects = getSheetData('projects');
+  
+  if (role === 'Super Admin') {
+    if (department && department !== 'All') {
+      projects = projects.filter(p => p.department === department);
+    }
+  } else {
+    // Regular employees and Managers only see their department's projects
+    projects = projects.filter(p => p.department === department);
+  }
+  
+  return projects.reverse();
+}
+
+function handleCreateProject(params) {
+  const { department, project_group, name, description, created_by } = params;
+  const project = {
+    project_id: Utilities.getUuid(),
+    department,
+    project_group,
+    name,
+    description: description || '',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    created_by
+  };
+  appendToSheet('projects', project);
+  return { success: true, project };
+}
+
+function getTasks(params) {
+  const { project_id, employee_id, role, department } = params;
+  let tasks = getSheetData('tasks');
+  
+  if (project_id) {
+    tasks = tasks.filter(t => t.project_id === project_id);
+  } else if (employee_id) {
+    if (role === 'Manager') {
+      // Find direct reports
+      const employees = getSheetData('employees');
+      const directReports = employees.filter(e => String(e.manager_id) === String(employee_id)).map(e => String(e.employee_id));
+      tasks = tasks.filter(t => t.assignee === String(employee_id) || directReports.indexOf(String(t.assignee)) !== -1);
+    } else if (role !== 'Super Admin') {
+      // Regular employee sees their own tasks
+      tasks = tasks.filter(t => t.assignee === String(employee_id));
+    }
+  }
+  
+  return tasks;
+}
+
+function handleCreateTask(params) {
+  const { project_id, title, description, assignee, due_date, priority, created_by } = params;
+  const task = {
+    task_id: Utilities.getUuid(),
+    project_id,
+    title,
+    description: description || '',
+    assignee: assignee || '',
+    status: 'todo',
+    due_date: due_date || '',
+    priority: priority || 'Medium',
+    subtasks: '[]',
+    comments: '[]',
+    created_by,
+    created_at: new Date().toISOString()
+  };
+  appendToSheet('tasks', task);
+  
+  // Notify Assignee
+  if (assignee) {
+    createNotification(
+      assignee,
+      "New Task Assigned",
+      `You have been assigned a new task: ${title}`,
+      "info",
+      `/dashboard/work`,
+      "",
+      "System"
+    );
+  }
+  
+  return { success: true, task };
+}
+
+function handleUpdateTask(params) {
+  const { task_id, status, assignee, subtasks, comments, due_date, priority } = params;
+  const data = getSheetData('tasks');
+  const task = data.find(t => t.task_id === task_id);
+  if (!task) throw new Error("Task not found");
+
+  const updates = {};
+  if (status !== undefined) updates.status = status;
+  if (assignee !== undefined) {
+    updates.assignee = assignee;
+    if (assignee && assignee !== task.assignee) {
+      createNotification(
+        assignee,
+        "Task Assigned",
+        `You have been assigned to task: ${task.title}`,
+        "info",
+        `/dashboard/work`,
+        "",
+        "System"
+      );
+    }
+  }
+  if (subtasks !== undefined) updates.subtasks = typeof subtasks === 'string' ? subtasks : JSON.stringify(subtasks);
+  if (comments !== undefined) updates.comments = typeof comments === 'string' ? comments : JSON.stringify(comments);
+  if (due_date !== undefined) updates.due_date = due_date;
+  if (priority !== undefined) updates.priority = priority;
+
+  updateRowInSheet('tasks', 'task_id', task_id, updates);
+  
+  return { success: true };
+}
+
+function handleAddTaskComment(params) {
+  const { task_id, text, user_name } = params;
+  const data = getSheetData('tasks');
+  const task = data.find(t => t.task_id === task_id);
+  if (!task) throw new Error("Task not found");
+
+  const comments = JSON.parse(task.comments || '[]');
+  const newComment = {
+    text: text,
+    user_name: user_name || 'System',
+    date: new Date().toISOString()
+  };
+  comments.push(newComment);
+
+  updateRowInSheet('tasks', 'task_id', task_id, {
+    comments: JSON.stringify(comments)
+  });
+
+  return { success: true, comment: newComment };
+}
+
+function handleGetPersonalTodos(params) {
+  const { employee_id } = params;
+  const data = getSheetData('personal_todos');
+  return data.filter(t => t.employee_id === String(employee_id));
+}
+
+function handleCreatePersonalTodo(params) {
+  const { employee_id, title, description, due_date } = params;
+  const todo_id = 'T' + Date.now();
+  const newTodo = {
+    todo_id: todo_id,
+    employee_id: String(employee_id),
+    title: title,
+    description: description || '',
+    status: 'pending',
+    due_date: due_date || '',
+    created_at: new Date().toISOString()
+  };
+  
+  addRowToSheet('personal_todos', newTodo);
+  return { success: true, todo: newTodo };
+}
+
+function handleUpdatePersonalTodo(params) {
+  const { todo_id, updates } = params;
+  updateRowInSheet('personal_todos', 'todo_id', todo_id, updates);
+  return { success: true };
+}
+
+function handleDeletePersonalTodo(params) {
+  const { todo_id } = params;
+  deleteRowFromSheet('personal_todos', 'todo_id', todo_id);
+  return { success: true };
 }

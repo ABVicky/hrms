@@ -12,6 +12,7 @@ import {
     Users,
     Settings,
     User,
+    Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
@@ -29,6 +30,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             { name: "Attendance", href: "/dashboard/attendance", icon: MapPin },
             { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
             { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
+            { name: "Work", href: "/dashboard/work", icon: Briefcase },
         ];
 
         if (user.role === "Super Admin" || user.role === "HR Admin") {
