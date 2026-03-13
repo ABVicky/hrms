@@ -211,7 +211,7 @@ export default function SalaryPage() {
                     
                     {selectedSlip.status === 'draft' ? (
                       <button 
-                        onClick={handleApproveSalary}
+                        onClick={handleApproveSlip}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
                       >
                         <CheckCircle size={18} />
