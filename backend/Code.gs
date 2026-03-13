@@ -26,6 +26,8 @@ function setupDatabase() {
       expectedHeaders = ['id', 'title', 'message', 'posted_by', 'timestamp', 'type', 'priority'];
     } else if (name === 'notifications') {
       expectedHeaders = ['id', 'employee_id', 'employee_name', 'title', 'message', 'timestamp', 'read', 'type', 'target_path'];
+    } else if (name === 'salary_slips') {
+      expectedHeaders = ['slip_id', 'employee_id', 'employee_name', 'department', 'month_year', 'total_full_days', 'total_half_days', 'total_payable_days', 'basic_salary', 'adjustments', 'fines', 'final_amount', 'status', 'generated_date', 'released_date'];
     }
 
     if (expectedHeaders.length > 0) {
@@ -127,6 +129,15 @@ function handleRequest(e, method) {
         break;
       case '/status':
         result = { status: "online", version: VERSION, spreadsheet_id: SpreadsheetApp.getActiveSpreadsheet().getId() };
+        break;
+      case '/get-salary-slips':
+        result = getSalarySlips(params);
+        break;
+      case '/update-salary-slip':
+        result = handleUpdateSalarySlip(params);
+        break;
+      case '/approve-salary':
+        result = handleApproveSalary(params);
         break;
       default:
         throw new Error('[v' + VERSION + '] Unknown endpoint: ' + endpoint);
@@ -703,3 +714,185 @@ function getEmployeeName(employee_id) {
   const emp = employees.find(e => e.employee_id == employee_id);
   return emp ? emp.name : 'Unknown';
 }
+
+// -------------------------------------------------------------
+// Salary Management Module
+// -------------------------------------------------------------
+
+function calculateMonthlySalary(employee_id, month, year) {
+  const attendance = getSheetData('attendance');
+  const leaves = getSheetData('leave_requests');
+  const employees = getSheetData('employees');
+  
+  const emp = employees.find(e => String(e.employee_id) === String(employee_id));
+  if (!emp) return null;
+
+  const basicSalary = parseFloat(emp.salary || 0);
+  
+  // Filter attendance for the given month/year
+  const monthStr = month < 10 ? `0${month}` : `${month}`;
+  const targetPrefix = `${year}-${monthStr}`;
+  
+  const monthAttendance = attendance.filter(a => {
+    const isOwner = String(a.employee_id) === String(employee_id);
+    const isTargetMonth = String(a.date).startsWith(targetPrefix);
+    return isOwner && isTargetMonth;
+  });
+
+  let fullDays = 0;
+  let halfDays = 0;
+
+  monthAttendance.forEach(a => {
+    if (a.mode === 'office') {
+      fullDays += 1;
+    } else if (a.mode === 'wfh') {
+      halfDays += 1; // WFH counts as 0.5 Day
+    }
+  });
+
+  // Approved Half-Day Leaves
+  const monthLeaves = leaves.filter(l => {
+    const isOwner = String(l.employee_id) === String(employee_id);
+    const isApproved = l.status === 'approved';
+    const isHalfDay = String(l.leave_type).toLowerCase().includes('half');
+    const isTargetMonth = String(l.start_date).startsWith(targetPrefix);
+    return isOwner && isApproved && isHalfDay && isTargetMonth;
+  });
+
+  halfDays += monthLeaves.length;
+
+  const totalPayableDays = fullDays + (halfDays * 0.5);
+  
+  // Simple calculation: (Basic / 30) * PayableDays 
+  // (Assuming 30 days for simplicity, or we could use actual days in month)
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const finalAmount = (basicSalary / daysInMonth) * totalPayableDays;
+
+  return {
+    fullDays,
+    halfDays,
+    totalPayableDays,
+    basicSalary,
+    finalAmount: finalAmount.toFixed(2)
+  };
+}
+
+function processMonthlySalaries() {
+  const employees = getSheetData('employees');
+  const now = new Date();
+  
+  // Process for PREVIOUS month
+  let prevMonth = now.getMonth(); // 0-indexed, so 0 is Jan
+  let year = now.getFullYear();
+  
+  if (prevMonth === 0) {
+    prevMonth = 12;
+    year -= 1;
+  }
+  
+  const monthYear = `${prevMonth}/${year}`;
+  
+  employees.forEach(emp => {
+    if (emp.account_status === 'inactive') return;
+    
+    const calculation = calculateMonthlySalary(emp.employee_id, prevMonth, year);
+    if (!calculation) return;
+
+    const slip = {
+      slip_id: Utilities.getUuid(),
+      employee_id: emp.employee_id,
+      employee_name: emp.name,
+      department: emp.department,
+      month_year: monthYear,
+      total_full_days: calculation.fullDays,
+      total_half_days: calculation.halfDays,
+      total_payable_days: calculation.totalPayableDays,
+      basic_salary: calculation.basicSalary,
+      adjustments: 0,
+      fines: 0,
+      final_amount: calculation.finalAmount,
+      status: 'draft',
+      generated_date: getNowIso(),
+      released_date: ''
+    };
+
+    appendToSheet('salary_slips', slip);
+  });
+}
+
+function releaseSalarySlips() {
+  const slips = getSheetData('salary_slips');
+  const now = new Date();
+  const monthYear = `${now.getMonth()}/${now.getFullYear()}`; // Note: This check might need more precision depending on exactly when it runs
+
+  slips.forEach(slip => {
+    if (slip.status === 'approved') {
+      updateRowInSheet('salary_slips', 'slip_id', slip.slip_id, {
+        status: 'released',
+        released_date: getNowIso()
+      });
+      
+      createNotification(
+        slip.employee_id,
+        "Salary Slip Released",
+        `Your salary slip for ${slip.month_year} is now available.`,
+        "success",
+        "/dashboard/salary"
+      );
+    }
+  });
+}
+
+function getSalarySlips(params) {
+  const { employee_id, role } = params;
+  const allSlips = getSheetData('salary_slips');
+  
+  if (role === 'Finance' || role === 'Super Admin') {
+    return allSlips;
+  }
+  
+  // Regular employees only see released slips
+  return allSlips.filter(s => String(s.employee_id) === String(employee_id) && s.status === 'released');
+}
+
+function handleUpdateSalarySlip(params) {
+  const { slip_id, adjustments, fines } = params;
+  const slips = getSheetData('salary_slips');
+  const slip = slips.find(s => s.slip_id === slip_id);
+  
+  if (!slip) throw new Error("Salary slip not found");
+  
+  const newAdjustments = parseFloat(adjustments || 0);
+  const newFines = parseFloat(fines || 0);
+  const currentFinal = parseFloat(slip.final_amount);
+  
+  // Re-calculate final amount based on adjustments/fines
+  // Note: We might want a more complex formula here, but for now: Base + Adjustments - Fines
+  // Wait, the calculation in processMonthlySalaries was (Basic/30)*Payable.
+  // We should probably store the 'calculated_base' separately if we want to be clean, 
+  // but let's just use the current logic: Adjustments/Fines add/subtract from the pre-calculated final_amount.
+  
+  const updatedFinal = currentFinal + newAdjustments - newFines;
+
+  updateRowInSheet('salary_slips', 'slip_id', slip_id, {
+    adjustments: newAdjustments,
+    fines: newFines,
+    final_amount: updatedFinal.toFixed(2)
+  });
+
+  return { success: true };
+}
+
+function handleApproveSalary(params) {
+  const { slip_id } = params;
+  updateRowInSheet('salary_slips', 'slip_id', slip_id, {
+    status: 'approved'
+  });
+  return { success: true };
+}
+
+// -------------------------------------------------------------
+// Triggers (Setup manually in Google Apps Script Console)
+// -------------------------------------------------------------
+// 1. processMonthlySalaries -> Monthly, 1st day, 00:00
+// 2. releaseSalarySlips -> Monthly, 5th day, 10:00

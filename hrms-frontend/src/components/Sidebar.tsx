@@ -35,6 +35,11 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             baseItems.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
         }
 
+        // Salary module visibility
+        if (user.role === "Super Admin" || user.department === "Finance" || user.role === "Employee" || user.role === "Manager") {
+            baseItems.push({ name: "Salary", href: "/dashboard/salary", icon: Receipt });
+        }
+
         baseItems.push({ name: "Settings", href: "/dashboard/settings", icon: Settings });
         return baseItems;
     };
