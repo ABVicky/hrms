@@ -548,7 +548,6 @@ function handleApproveRequest(params) {
         'Manager'
       );
     }
-  }
 
   // Update status in central requests table
   const searchType = type === 'leave' ? 'Leave Request' : 'Reimbursement';
