@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import RequestTracking from "@/components/RequestTracking";
 import { appsScriptFetch } from "@/lib/api";
@@ -29,7 +30,10 @@ import {
     Info,
     AlertTriangle,
     Heart,
-    History as HistoryIcon
+    History as HistoryIcon,
+    Sun,
+    Moon,
+    ArrowRight
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -38,22 +42,13 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // PERF: Load from local storage immediately (SWR)
-        const cachedStats = localStorage.getItem(`hrms_stats_${user?.employee_id}`);
-        if (cachedStats) {
-            setStats(JSON.parse(cachedStats));
-            setLoading(false);
-        }
-
-        async function loadStats(isBackground = false) {
-            if (!isBackground && !cachedStats) setLoading(true);
+        async function loadStats() {
             try {
                 const data = await appsScriptFetch("/dashboard-stats", { 
                     employee_id: user?.employee_id, 
                     role: user?.role 
                 });
                 setStats(data);
-                localStorage.setItem(`hrms_stats_${user?.employee_id}`, JSON.stringify(data));
             } catch (error) {
                 console.error("Failed to load dashboard stats", error);
             } finally {
@@ -63,8 +58,8 @@ export default function DashboardPage() {
         
         loadStats();
 
-        // Auto-refresh for a "real-time" sync experience
-        const interval = setInterval(() => loadStats(true), 15000);
+        // Auto-refresh every 10 seconds for a "real-time" sync experience
+        const interval = setInterval(loadStats, 10000);
         return () => clearInterval(interval);
     }, [user]);
 
@@ -92,6 +87,16 @@ export default function DashboardPage() {
     const isHR = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Manager";
     const isFinance = user?.role === "Super Admin" || user?.role === "Finance" || user?.role === "Manager";
 
+    const getTimeGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return { text: "Good Morning", icon: Sun, color: "text-amber-500" };
+        if (hour < 17) return { text: "Good Afternoon", icon: Sun, color: "text-orange-500" };
+        return { text: "Good Evening", icon: Moon, color: "text-indigo-500" };
+    };
+
+    const greeting = getTimeGreeting();
+    const GreetingIcon = greeting.icon;
+
     const handleAction = async (id: string, type: 'leave' | 'expense', action: 'approve' | 'reject') => {
         try {
             await appsScriptFetch(`/${action}-request`, {
@@ -107,10 +112,49 @@ export default function DashboardPage() {
     };
     
     return (
-        <div className="space-y-6 md:space-y-8 page-transition pb-10">
-            <div className="px-1 md:px-0">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back, {user?.name.split(' ')[0]}!</h1>
-                <p className="text-sm md:text-base text-slate-500 font-medium">Here is what is happening today.</p>
+        <div className="space-y-6 md:space-y-8 page-transition pb-32 md:pb-10">
+            {/* Unified Greeting Section */}
+            <div className="flex items-center justify-between px-1 md:px-0">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <GreetingIcon size={18} className={greeting.color} />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{greeting.text}</span>
+                    </div>
+                    <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        {user?.name.split(' ')[0]}!
+                    </h1>
+                </div>
+                <div className="md:hidden">
+                    <div className="px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500 shadow-sm">
+                        ID: {user?.employee_id}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Hero Card: Attendance Quick-glance */}
+            <div className="md:hidden">
+                <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-600 to-violet-700 p-6 shadow-xl shadow-indigo-200 ring-1 ring-white/20">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
+                    
+                    <div className="relative z-10 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-indigo-100 text-sm font-medium">Lets get to work</p>
+                            <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
+                                <Clock className="text-white" size={20} />
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-white text-base font-bold">Checked Out</p>
+                            <p className="text-indigo-200 text-[10px] font-medium mt-1 uppercase tracking-wider">Tap Attendance to check in</p>
+                        </div>
+
+                        <Link href="/dashboard/attendance" className="flex items-center justify-center w-full py-3 bg-white text-indigo-600 rounded-2xl font-bold text-sm shadow-lg active:scale-95 transition-transform">
+                            Go to Attendance
+                        </Link>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -158,9 +202,10 @@ export default function DashboardPage() {
                                     Live Sync
                                 </div>
                             </div>
-                            <button className="text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors group">
-                                View All <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                            </button>
+                            <Link href="/dashboard/announcements" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group/link">
+                                View All
+                                <ChevronRight size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
+                            </Link>
                         </div>
                         <div className="p-5 md:p-7">
                             <div className="space-y-4 md:space-y-6">
@@ -388,28 +433,28 @@ function StatCard({ title, value, icon: Icon, color, bg, iconBg }: any) {
     const isStatPositive = true; // Demonstration
 
     return (
-        <div className={`rounded-[2.5rem] shadow-sm border border-slate-100 p-5 md:p-8 flex flex-col gap-5 md:gap-7 bg-gradient-to-br ${bg} premium-card group overflow-hidden relative transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1.5`}>
+        <div className={`rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-100 p-4 md:p-8 flex flex-col gap-3 md:gap-7 bg-gradient-to-br ${bg} premium-card group overflow-hidden relative transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1.5`}>
             {/* Glossy Overlay/Pattern */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -ml-16 -mb-16 group-hover:scale-150 transition-transform duration-1000 delay-100"></div>
 
             <div className="flex items-center justify-between relative z-10">
-                <div className={`p-4 md:p-5 rounded-[1.5rem] ${iconBg} ${color} shadow-lg ring-1 ring-white/50 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 bg-gradient-to-br from-white to-slate-50`}>
-                    <Icon size={24} className="md:size-7" strokeWidth={2.5} />
+                <div className={`p-3 md:p-5 rounded-xl md:rounded-[1.5rem] ${iconBg} ${color} shadow-lg ring-1 ring-white/50 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 bg-gradient-to-br from-white to-slate-50`}>
+                    <Icon size={20} className="md:size-7" strokeWidth={2.5} />
                 </div>
-                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest ${isStatPositive ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-rose-50 text-rose-600 ring-1 ring-rose-100'}`}>
-                    {isStatPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                <div className={`flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:xl text-[8px] md:text-xs font-black uppercase tracking-widest ${isStatPositive ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-rose-50 text-rose-600 ring-1 ring-rose-100'}`}>
+                    {isStatPositive ? <ArrowUpRight size={12} className="md:size-[14px]" /> : <ArrowDownRight size={12} className="md:size-[14px]" />}
                     12%
                 </div>
             </div>
 
             <div className="relative z-10">
-                <p className="text-[10px] md:text-xs font-black text-slate-400 mb-1.5 md:mb-2 uppercase tracking-[0.2em]">{title}</p>
-                <p className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-indigo-600 transition-colors duration-500">{value}</p>
+                <p className="text-[8px] md:text-xs font-black text-slate-400 mb-1 md:mb-2 uppercase tracking-[0.2em]">{title}</p>
+                <p className="text-2xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-indigo-600 transition-colors duration-500">{value}</p>
             </div>
             
             {/* Visual Progress Bar (Subtle) */}
-            <div className="h-1.5 w-full bg-slate-100/50 rounded-full overflow-hidden mt-1 relative z-10">
+            <div className="h-1 md:h-1.5 w-full bg-slate-100/50 rounded-full overflow-hidden mt-0.5 md:mt-1 relative z-10">
                 <div className={`h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full w-[70%] group-hover:w-[75%] transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.3)]`}></div>
             </div>
         </div>

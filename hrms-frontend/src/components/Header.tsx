@@ -56,7 +56,7 @@ export default function Header() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <header className="sticky top-0 z-30 w-full glass-effect border-b border-white/20 px-4 md:px-0">
+        <header className="sticky top-0 z-30 w-full glass-effect border-b border-slate-100 md:border-white/20 px-4 md:px-0 transition-colors duration-300">
             <div className="flex items-center justify-between h-[64px] md:h-[80px] max-w-7xl mx-auto md:px-8">
                 {/* Mobile Left: Profile Pic */}
                 <div className="md:hidden flex-1 flex items-center">

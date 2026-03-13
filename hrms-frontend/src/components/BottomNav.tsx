@@ -15,33 +15,45 @@ export default function BottomNav({ setIsSidebarOpen }: { setIsSidebarOpen: (val
     ];
 
     return (
-        <div className="md:hidden fixed bottom-4 left-6 right-6 z-20">
-            <div className="glass-effect rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/20 px-6 py-4">
-                <div className="flex items-center justify-around">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex flex-col items-center justify-center transition-all duration-300 relative ${isActive ? "text-indigo-600 scale-105" : "text-slate-400 hover:text-indigo-400"
-                                    }`}
-                            >
-                                <Icon size={24} className={isActive ? "stroke-[2.5]" : "stroke-[2]"} />
-                                <span className={`text-[10px] font-black uppercase tracking-tighter mt-1 transition-opacity ${isActive ? "opacity-100" : "opacity-40"}`}>
-                                    {item.name}
-                                </span>
-                            </Link>
-                        );
-                    })}
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-400 transition-all duration-300"
-                    >
-                        <Menu size={24} className="stroke-[2]" />
-                        <span className="text-[10px] font-black uppercase tracking-tighter mt-1 opacity-40">Menu</span>
-                    </button>
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
+            <div className="relative">
+                {/* Subtle top glow line */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
+                
+                <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-2 pt-1 pb-safe-area shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+                    <div className="flex items-center justify-around h-16">
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`flex-1 flex flex-col items-center justify-center transition-all duration-300 relative active:scale-90 ${isActive ? "text-indigo-600" : "text-slate-400"
+                                        }`}
+                                >
+                                    {isActive && (
+                                        <div className="absolute top-[-5px] w-12 h-1 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)] animate-in fade-in zoom-in duration-500"></div>
+                                    )}
+                                    <div className={`p-1.5 transition-all duration-300 ${isActive ? 'translate-y-[-2px]' : ''}`}>
+                                        <Icon size={22} className={isActive ? "stroke-[2.5]" : "stroke-[2]"} />
+                                    </div>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider transition-all duration-300 ${isActive ? "opacity-100 translate-y-[-2px]" : "opacity-50"}`}>
+                                        {item.name}
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="flex-1 flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-all duration-300"
+                        >
+                            <div className="p-1.5">
+                                <Menu size={22} className="stroke-[2]" />
+                            </div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider opacity-50">Menu</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
