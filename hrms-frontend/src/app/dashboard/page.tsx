@@ -23,7 +23,13 @@ import {
     UserCheck,
     Home,
     AlertCircle,
-    RefreshCcw
+    RefreshCcw,
+    PartyPopper,
+    Award,
+    Info,
+    AlertTriangle,
+    Heart,
+    History as HistoryIcon
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -73,7 +79,7 @@ export default function DashboardPage() {
         </div>;
     }
 
-    const isAdmin = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Finance" || user?.role === "Manager";
+    const isStatAdmin = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Manager";
     const isHR = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Manager";
     const isFinance = user?.role === "Super Admin" || user?.role === "Finance" || user?.role === "Manager";
 
@@ -90,7 +96,7 @@ export default function DashboardPage() {
             alert(`Failed to ${action} request`);
         }
     };
-
+    
     return (
         <div className="space-y-6 md:space-y-8 page-transition pb-10">
             <div className="px-1 md:px-0">
@@ -98,29 +104,35 @@ export default function DashboardPage() {
                 <p className="text-sm md:text-base text-slate-500 font-medium">Here is what is happening today.</p>
             </div>
 
-            {isAdmin ? (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    <StatCard title="Total Employees" value={stats?.total_employees || 0} icon={Users} color="text-indigo-600" bg="from-indigo-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
-                    <StatCard title="Present Today" value={stats?.today_present || 0} icon={UserCheck} color="text-emerald-600" bg="from-emerald-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
-                    <StatCard title="Working From Home" value={stats?.wfh_count || 0} icon={Home} color="text-cyan-600" bg="from-cyan-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
-                    <StatCard title="Pending Approvals" value={(stats?.pending_leaves || 0) + (stats?.pending_expenses || 0)} icon={AlertCircle} color="text-rose-600" bg="from-rose-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
-                </div>
-            ) : (
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8 premium-card">
-                    <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-6">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <div className="p-5 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-between group hover:border-indigo-200 transition-colors">
-                            <div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Status</p>
-                                <p className="text-lg md:text-xl font-black text-slate-900 mt-1">Not Checked In</p>
-                            </div>
-                            <div className="p-2.5 md:p-3 bg-white rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                                <Clock className="text-slate-400 group-hover:text-indigo-500 transition-colors" size={28} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {isStatAdmin && (
+                    <>
+                        <StatCard title="Total Employees" value={stats?.total_employees || 0} icon={Users} color="text-indigo-600" bg="from-indigo-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
+                        <StatCard title="Present Today" value={stats?.today_present || 0} icon={UserCheck} color="text-emerald-600" bg="from-emerald-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
+                        <StatCard title="Working From Home" value={stats?.wfh_count || 0} icon={Home} color="text-cyan-600" bg="from-cyan-50/50 to-white" iconBg="bg-white shadow-sm ring-1 ring-slate-100" />
+                    </>
+                )}
+                
+                <StatCard 
+                    title="Pending Approvals" 
+                    value={isStatAdmin || user?.role === 'Finance' ? ((stats?.pending_leaves || 0) + (stats?.pending_expenses || 0)) : (stats?.personal_pending || 0)} 
+                    icon={AlertCircle} 
+                    color="text-rose-600" 
+                    bg="from-rose-50/50 to-white" 
+                    iconBg="bg-white shadow-sm ring-1 ring-slate-100" 
+                />
+
+                {!isStatAdmin && (
+                    <StatCard 
+                        title="Requested Approvals" 
+                        value={stats?.personal_total || 0} 
+                        icon={RefreshCcw} 
+                        color="text-amber-600" 
+                        bg="from-amber-50/50 to-white" 
+                        iconBg="bg-white shadow-sm ring-1 ring-slate-100" 
+                    />
+                )}
+            </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-4">
                 <div className="xl:col-span-2 space-y-8">
@@ -144,35 +156,75 @@ export default function DashboardPage() {
                         <div className="p-5 md:p-7">
                             <div className="space-y-4 md:space-y-6">
                                 {stats?.latest_announcements?.length > 0 ? (
-                                    stats.latest_announcements.map((announcement: any) => (
-                                        <div key={announcement.id} className="p-4 md:p-5 rounded-2xl border border-slate-100 bg-slate-50/30 flex gap-4 md:gap-5 hover:bg-slate-50/70 transition-colors cursor-pointer group clickable">
-                                            <div className="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg md:text-xl shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform">
-                                                {announcement.type?.charAt(0) || 'A'}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h3 className="font-bold text-slate-900 text-base md:text-lg truncate">{announcement.title}</h3>
-                                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest ring-1 ${
-                                                            announcement.priority === 'urgent' ? 'bg-rose-50 text-rose-600 ring-rose-100' :
-                                                            announcement.priority === 'high' ? 'bg-amber-50 text-amber-600 ring-amber-100' :
-                                                            'bg-slate-50 text-slate-500 ring-slate-100'
-                                                        }`}>
-                                                            {announcement.priority || 'normal'}
-                                                        </span>
+                                    stats.latest_announcements.map((announcement: any) => {
+                                        const title = announcement.title?.toLowerCase() || "";
+                                        const message = announcement.message?.toLowerCase() || "";
+                                        
+                                        // Dynamic Icon Logic
+                                        let Icon = Megaphone;
+                                        let gradient = "from-indigo-600 to-violet-600";
+                                        let shadow = "shadow-indigo-200";
+
+                                        if (title.includes("birthday") || message.includes("birthday") || title.includes("celebration")) {
+                                            Icon = PartyPopper;
+                                            gradient = "from-rose-500 to-pink-500";
+                                            shadow = "shadow-rose-100";
+                                        } else if (title.includes("award") || title.includes("winner") || title.includes("congratulations")) {
+                                            Icon = Award;
+                                            gradient = "from-amber-400 to-orange-500";
+                                            shadow = "shadow-amber-100";
+                                        } else if (title.includes("holiday") || title.includes("leave") || title.includes("event")) {
+                                            Icon = Calendar;
+                                            gradient = "from-emerald-500 to-teal-600";
+                                            shadow = "shadow-emerald-100";
+                                        } else if (announcement.priority === 'urgent') {
+                                            Icon = AlertTriangle;
+                                            gradient = "from-rose-600 to-red-700";
+                                            shadow = "shadow-rose-200";
+                                        } else if (title.includes("policy") || title.includes("update")) {
+                                            Icon = Info;
+                                            gradient = "from-blue-500 to-indigo-600";
+                                            shadow = "shadow-blue-100";
+                                        }
+
+                                        return (
+                                            <div key={announcement.id} className="p-4 md:p-6 rounded-[2rem] border border-slate-100 bg-white/50 hover:bg-white transition-all duration-500 cursor-pointer group clickable shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1">
+                                                <div className="flex gap-5 md:gap-6">
+                                                    <div className={`shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-lg ${shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                                                        <Icon size={28} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-start gap-3">
+                                                            <div className="flex items-center gap-3 flex-wrap">
+                                                                <h3 className="font-extrabold text-slate-900 text-base md:text-xl tracking-tight group-hover:text-indigo-600 transition-colors leading-tight">{announcement.title}</h3>
+                                                                <span className={`px-2.5 py-1 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest ring-1 ${
+                                                                    announcement.priority === 'urgent' ? 'bg-rose-50 text-rose-600 ring-rose-100' :
+                                                                    announcement.priority === 'high' ? 'bg-amber-50 text-amber-600 ring-amber-100' :
+                                                                    'bg-slate-50 text-slate-500 ring-slate-100'
+                                                                }`}>
+                                                                    {announcement.priority || 'normal'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-slate-600 mt-2 text-sm md:text-base leading-relaxed font-medium line-clamp-2 md:line-clamp-none opacity-80 group-hover:opacity-100 transition-opacity">{announcement.message}</p>
+                                                        <div className="flex items-center justify-between mt-5 md:mt-6">
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 text-slate-400 font-bold text-[10px] md:text-xs">
+                                                                    <Clock size={12} />
+                                                                    {new Date(announcement.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                </div>
+                                                                <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                                                                <p className="text-[10px] md:text-xs font-black text-indigo-500 uppercase tracking-widest">{announcement.type || 'Announcement'}</p>
+                                                            </div>
+                                                            <button className="flex items-center gap-1.5 py-1.5 px-4 rounded-xl bg-indigo-50 text-indigo-600 text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all transform active:scale-95">
+                                                                Read Full <ChevronRight size={14} strokeWidth={3} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <p className="text-slate-600 mt-1 text-xs md:text-sm leading-relaxed line-clamp-2 md:line-clamp-none">{announcement.message}</p>
-                                                <div className="flex items-center gap-2 md:gap-3 mt-3 md:mt-4">
-                                                    <p className="text-[10px] md:text-xs font-semibold text-slate-400">
-                                                        {new Date(announcement.timestamp).toLocaleDateString()}
-                                                    </p>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                    <p className="text-[10px] md:text-xs font-bold text-indigo-500">Read Details</p>
-                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <div className="text-center py-10">
                                         <Megaphone size={40} className="mx-auto text-slate-200 mb-3" />
@@ -273,23 +325,46 @@ export default function DashboardPage() {
                             <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
                             Recent Activity
                         </h2>
-                        <div className="relative border-l-2 border-slate-100 ml-3 space-y-8 md:space-y-10 pb-4">
+                        <div className="relative border-l-[3px] border-slate-100 ml-5 space-y-10 md:space-y-12 pb-6">
                             {stats?.recent_notifications?.length > 0 ? (
                                 stats.recent_notifications.map((notif: any) => (
-                                    <div key={notif.id} className="relative">
-                                        <span className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-white border-4 shadow-sm ring-4 ring-white ${notif.read ? 'border-slate-200' : 'border-indigo-600'}`}></span>
-                                        <div className="ml-6 md:ml-8">
-                                            <p className="font-bold text-slate-900 text-base md:text-lg tracking-tight">{notif.title}</p>
-                                            <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">{notif.message}</p>
-                                            <p className="text-[10px] font-black text-slate-400 mt-2.5 md:mt-3 uppercase tracking-wider">
-                                                {new Date(notif.timestamp).toLocaleString()}
-                                            </p>
+                                    <div key={notif.id} className="relative group/item">
+                                        <div className={`absolute -left-[13px] top-1.5 w-6 h-6 rounded-full bg-white border-2 shadow-sm transition-all duration-300 group-hover/item:scale-125 ${
+                                            notif.read ? 'border-slate-300' : 
+                                            notif.title.toLowerCase().includes('approved') ? 'border-emerald-500 shadow-emerald-200' :
+                                            notif.title.toLowerCase().includes('rejected') ? 'border-rose-500 shadow-rose-200' :
+                                            'border-indigo-600 shadow-indigo-200'
+                                        }`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full mx-auto mt-1 auto-pulse ${
+                                                notif.read ? 'bg-slate-300' : 
+                                                notif.title.toLowerCase().includes('approved') ? 'bg-emerald-500' :
+                                                notif.title.toLowerCase().includes('rejected') ? 'bg-rose-500' :
+                                                'bg-indigo-600'
+                                            }`}></div>
+                                        </div>
+                                        <div className="ml-8 md:ml-10 group-hover/item:translate-x-1 transition-transform duration-300">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="font-extrabold text-slate-900 text-base md:text-xl tracking-tight leading-tight group-hover/item:text-indigo-600 transition-colors">{notif.title}</p>
+                                                {!notif.read && (
+                                                    <span className="flex h-2 w-2 rounded-full bg-indigo-600"></span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm md:text-base text-slate-500 font-medium opacity-80 group-hover/item:opacity-100 transition-opacity">{notif.message}</p>
+                                            <div className="flex items-center gap-2 mt-4">
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 font-bold text-[10px] md:text-xs">
+                                                    <Clock size={12} />
+                                                    {new Date(notif.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="ml-8">
-                                    <p className="text-slate-400 font-medium italic">No recent activity.</p>
+                                <div className="ml-10">
+                                    <div className="p-10 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                                        <HistoryIcon size={40} className="mx-auto text-slate-200 mb-4" />
+                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No recent activity found</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -301,20 +376,32 @@ export default function DashboardPage() {
 }
 
 function StatCard({ title, value, icon: Icon, color, bg, iconBg }: any) {
-    return (
-        <div className={`rounded-[2rem] shadow-sm border border-slate-100 p-4 md:p-8 flex flex-col gap-4 md:gap-6 bg-gradient-to-br ${bg} premium-card group overflow-hidden relative`}>
-            {/* Subtle background decoration */}
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+    const isStatPositive = true; // Demonstration
 
-            <div className={`p-3 md:p-4 rounded-2xl w-fit ${iconBg} ${color} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
-                <Icon size={24} className="md:size-[28px]" />
-            </div>
-            <div>
-                <p className="text-[10px] md:text-sm font-bold text-slate-500 mb-1 md:mb-1.5 uppercase tracking-widest">{title}</p>
-                <div className="flex items-baseline gap-2">
-                    <p className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter">{value}</p>
-                    <span className="text-[9px] md:text-[10px] font-black text-emerald-500 bg-emerald-50 px-1.5 md:px-2 py-0.5 rounded-full">+12%</span>
+    return (
+        <div className={`rounded-[2.5rem] shadow-sm border border-slate-100 p-5 md:p-8 flex flex-col gap-5 md:gap-7 bg-gradient-to-br ${bg} premium-card group overflow-hidden relative transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1.5`}>
+            {/* Glossy Overlay/Pattern */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -ml-16 -mb-16 group-hover:scale-150 transition-transform duration-1000 delay-100"></div>
+
+            <div className="flex items-center justify-between relative z-10">
+                <div className={`p-4 md:p-5 rounded-[1.5rem] ${iconBg} ${color} shadow-lg ring-1 ring-white/50 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 bg-gradient-to-br from-white to-slate-50`}>
+                    <Icon size={24} className="md:size-7" strokeWidth={2.5} />
                 </div>
+                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest ${isStatPositive ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-rose-50 text-rose-600 ring-1 ring-rose-100'}`}>
+                    {isStatPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                    12%
+                </div>
+            </div>
+
+            <div className="relative z-10">
+                <p className="text-[10px] md:text-xs font-black text-slate-400 mb-1.5 md:mb-2 uppercase tracking-[0.2em]">{title}</p>
+                <p className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-indigo-600 transition-colors duration-500">{value}</p>
+            </div>
+            
+            {/* Visual Progress Bar (Subtle) */}
+            <div className="h-1.5 w-full bg-slate-100/50 rounded-full overflow-hidden mt-1 relative z-10">
+                <div className={`h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full w-[70%] group-hover:w-[75%] transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.3)]`}></div>
             </div>
         </div>
     );

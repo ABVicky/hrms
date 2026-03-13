@@ -70,7 +70,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
 
                 </div>
 
-                <nav className="flex-1 px-4 py-8 space-y-1.5 overflow-y-auto">
+                <nav className="flex-1 px-5 py-10 space-y-2.5 overflow-y-auto custom-scrollbar">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
@@ -79,31 +79,32 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setIsOpen(false)}
-                                className={`flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${isActive
-                                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 font-bold"
-                                    : "hover:bg-slate-900 hover:text-white font-medium"
+                                className={`flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all duration-500 group relative overflow-hidden ${isActive
+                                    ? "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] font-extrabold translate-x-2"
+                                    : "hover:bg-slate-900/50 hover:text-white font-bold text-slate-400 hover:translate-x-1"
                                     }`}
                             >
-                                <Icon size={20} className={isActive ? "text-white" : "text-slate-500 group-hover:text-indigo-400 transition-colors"} />
-                                <span>{item.name}</span>
+                                {isActive && <div className="absolute left-0 top-0 w-1.5 h-full bg-white rounded-r-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>}
+                                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-white" : "text-slate-600 group-hover:text-indigo-400 transition-colors"} />
+                                <span className="tracking-tight">{item.name}</span>
                             </Link>
                         );
                     })}
                 </nav>
 
                 {/* User preview */}
-                <div className="mt-auto p-4">
-                    <div className="bg-gradient-to-b from-slate-900 to-black p-5 rounded-[2rem] border border-slate-800/50 shadow-xl relative overflow-hidden group">
-                        {/* Background glow */}
-                        <div className="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors duration-700"></div>
+                <div className="mt-auto p-6">
+                    <div className="bg-gradient-to-br from-slate-900 to-black p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden group transition-all duration-500 hover:border-indigo-500/30">
+                        {/* Soft Glow */}
+                        <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700"></div>
                         
-                        <div className="flex items-center gap-4 relative">
+                        <div className="flex items-center gap-4 relative z-10">
                             <div className="relative shrink-0">
                                 {user.profile_picture ? (
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
                                         alt="" 
-                                        className="absolute inset-0 w-11 h-11 rounded-2xl object-cover ring-2 ring-slate-800/50 bg-slate-800 shadow-sm z-10 transition-opacity duration-300"
+                                        className="absolute inset-0 w-12 h-12 rounded-[1.2rem] object-cover ring-2 ring-slate-800 shadow-xl z-10 transition-all duration-500 group-hover:scale-105"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).style.opacity = '0';
                                         }}
@@ -112,21 +113,22 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                         }}
                                     />
                                 ) : null}
-                                <div className="w-11 h-11 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-800/50">
-                                    <User size={20} strokeWidth={2.5} />
+                                <div className="w-12 h-12 rounded-[1.2rem] bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-700">
+                                    <User size={24} strokeWidth={2.5} />
                                 </div>
-                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-sm z-20 transition-colors duration-500 ${
-                                    attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
-                                    attendanceStatus === 'checked-out' ? 'bg-rose-500' : 
-                                    'bg-slate-500'
+                                <div className={`absolute -top-1 -right-1 w-4 h-4 border-[3.5px] border-slate-950 rounded-full shadow-lg z-20 transition-all duration-700 ${
+                                    attendanceStatus === 'checked-in' ? 'bg-emerald-500 shadow-emerald-500/20' : 
+                                    attendanceStatus === 'checked-out' ? 'bg-rose-500 shadow-rose-500/20' : 
+                                    'bg-slate-600'
                                 }`}></div>
                             </div>
-                            <div className="min-w-0 pr-2">
-                                <p className="text-sm font-black text-white truncate tracking-tight">{user.name}</p>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mt-0.5 truncate flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-indigo-500/50"></span>
-                                    {user.role}
-                                </p>
+                            <div className="min-w-0">
+                                <p className="text-base font-black text-white truncate tracking-tight group-hover:text-indigo-300 transition-colors">{user.name}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
+                                        {user.role}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

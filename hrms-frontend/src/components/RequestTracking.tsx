@@ -10,7 +10,9 @@ import {
   XCircle, 
   AlertCircle,
   ChevronRight,
-  History
+  History,
+  Receipt,
+  Calendar
 } from "lucide-react";
 
 export default function RequestTracking() {
@@ -80,38 +82,60 @@ export default function RequestTracking() {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
                 {requests.length > 0 ? (
-                    requests.map((request) => (
-                        <div key={request.id} className="group p-4 rounded-2xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/10 transition-all duration-300">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                                            <FileText size={10} /> {request.form_type}
-                                        </span>
-                                        <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">{request.department_responsible}</span>
+                    requests.map((request) => {
+                        const type = request.form_type?.toLowerCase() || "";
+                        let Icon = FileText;
+                        let iconBg = "bg-slate-100 text-slate-500";
+                        let gradient = "from-slate-50 to-white";
+
+                        if (type.includes("leave")) {
+                            Icon = Calendar;
+                            iconBg = "bg-emerald-50 text-emerald-600";
+                            gradient = "from-emerald-50/30 to-white";
+                        } else if (type.includes("reimbursement") || type.includes("expense")) {
+                            Icon = Receipt;
+                            iconBg = "bg-amber-50 text-amber-600";
+                            gradient = "from-amber-50/30 to-white";
+                        }
+
+                        return (
+                            <div key={request.id} className={`group p-5 rounded-[2rem] border border-slate-100 bg-gradient-to-br ${gradient} hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 cursor-pointer overflow-hidden relative`}>
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
+                                
+                                <div className="flex items-start gap-5 relative z-10">
+                                    <div className={`shrink-0 w-12 h-12 rounded-2xl ${iconBg} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500 ring-4 ring-white`}>
+                                        <Icon size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h4 className="font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
-                                        {request.title}
-                                    </h4>
-                                    <div className="flex items-center gap-3 mt-2">
-                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${getStatusStyles(request.status)}`}>
-                                            {getStatusIcon(request.status)}
-                                            {request.status.replace('_', ' ')}
-                                        </span>
-                                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                                            <Clock size={10} /> {new Date(request.submitted_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                        </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
+                                                {request.department_responsible}
+                                            </span>
+                                            <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                {request.form_type}
+                                            </span>
+                                        </div>
+                                        <h4 className="font-extrabold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors text-base">
+                                            {request.title}
+                                        </h4>
+                                        <div className="flex items-center justify-between mt-4">
+                                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-2 ${getStatusStyles(request.status)}`}>
+                                                {getStatusIcon(request.status)}
+                                                {request.status.replace('_', ' ')}
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px]">
+                                                <Clock size={12} />
+                                                {new Date(request.submitted_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-2 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-white group-hover:text-indigo-600 transition-all shadow-sm group-hover:translate-x-1">
-                                    <ChevronRight size={16} strokeWidth={3} />
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mb-4 text-slate-200">

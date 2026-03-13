@@ -635,6 +635,11 @@ function getDashboardStats(params) {
     pending_expenses_list = pending_expenses_list.concat(expenses.filter(e => e.status === 'pending_finance' || e.status === 'pending'));
   }
 
+  // Stats for everyone (Personal)
+  const personal_pending_leaves = leaves.filter(l => l.employee_id == employee_id && l.status === 'pending').length;
+  const personal_pending_expenses = expenses.filter(e => e.employee_id == employee_id && e.status === 'pending').length;
+  const personal_total_requests = leaves.filter(l => l.employee_id == employee_id).length + expenses.filter(e => e.employee_id == employee_id).length;
+
   // Basic stats
   const stats = {
     total_employees: employees.filter(e => e.account_status !== 'inactive').length,
@@ -642,6 +647,8 @@ function getDashboardStats(params) {
     wfh_count: wfhCount,
     pending_leaves: pending_leaves_list.length,
     pending_expenses: pending_expenses_list.length,
+    personal_pending: personal_pending_leaves + personal_pending_expenses,
+    personal_total: personal_total_requests,
     pending_leaves_list,
     pending_expenses_list,
     latest_announcements: announcements,
