@@ -15,7 +15,11 @@ export default function Header() {
         const fetchNotifications = async () => {
             if (!user?.employee_id) return;
             try {
-                const data = await appsScriptFetch("/get-notifications", { employee_id: user.employee_id });
+                const data = await appsScriptFetch("/get-notifications", { 
+                    employee_id: user.employee_id,
+                    department: user.department,
+                    role: user.role
+                });
                 if (data) setNotifications(data);
             } catch (error) {
                 console.error("Failed to fetch notifications", error);

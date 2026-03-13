@@ -25,7 +25,9 @@ function setupDatabase() {
     } else if (name === 'announcements') {
       expectedHeaders = ['id', 'title', 'message', 'posted_by', 'timestamp', 'type', 'priority'];
     } else if (name === 'notifications') {
-      expectedHeaders = ['id', 'employee_id', 'employee_name', 'title', 'message', 'timestamp', 'read', 'type', 'target_path'];
+      expectedHeaders = ['id', 'employee_id', 'employee_name', 'title', 'message', 'timestamp', 'read', 'type', 'target_path', 'target_department', 'sender_role'];
+    } else if (name === 'requests') {
+      expectedHeaders = ['id', 'user_id', 'employee_name', 'form_type', 'title', 'department_responsible', 'status', 'submitted_at', 'updated_at', 'reviewed_by'];
     } else if (name === 'salary_slips') {
       expectedHeaders = ['slip_id', 'employee_id', 'employee_name', 'department', 'month_year', 'total_full_days', 'total_half_days', 'total_payable_days', 'basic_salary', 'adjustments', 'fines', 'final_amount', 'status', 'generated_date', 'released_date'];
     }
@@ -138,6 +140,9 @@ function handleRequest(e, method) {
         break;
       case '/approve-salary':
         result = handleApproveSalary(params);
+        break;
+      case '/get-user-requests':
+        result = getUserRequests(params);
         break;
       default:
         throw new Error('[v' + VERSION + '] Unknown endpoint: ' + endpoint);
@@ -373,9 +378,14 @@ function handleLeaveRequest(params) {
   };
   
   appendToSheet('leave_requests', request);
-  // Send email notification to Manager here if needed
-  clearCache(params.employee_id);
   
+  // 1. Log in central requests table
+  createRequest(params.employee_id, 'Leave Request', request.leave_type, 'HR', initialStatus);
+
+  // 2. Notify HR Department
+  createNotification('', 'New Leave Request', `${request.employee_name} submitted a ${request.leave_type} request.`, 'info', '/dashboard/leaves', 'HR', 'Employee');
+
+  clearCache(params.employee_id);
   return { status: 'Leave requested successfully', request };
 }
 
@@ -417,6 +427,13 @@ function handleExpenseSubmit(params) {
   };
   
   appendToSheet('expenses', expense);
+
+  // 1. Log in central requests table
+  createRequest(params.employee_id, 'Reimbursement', expense.category, 'Finance', initialStatus);
+
+  // 2. Notify Finance Department
+  createNotification('', 'New Reimbursement Claim', `${expense.employee_name} submitted a claim for ₹${expense.amount}.`, 'info', '/dashboard/expenses', 'Finance', 'Employee');
+
   clearCache(params.employee_id);
   return { status: 'Expense submitted successfully', expense };
 }
@@ -521,13 +538,24 @@ function handleApproveRequest(params) {
       '/dashboard'
     );
   } else if (request && role === 'Manager') {
-    createNotification(
-      request.employee_id,
-      `${type === 'leave' ? 'Leave' : 'Expense'} Manager Approval`,
-      `Your manager has approved your ${type} request. It is now pending final review.`,
-      'info',
-      '/dashboard'
-    );
+      createNotification(
+        request.employee_id,
+        `${type === 'leave' ? 'Leave' : 'Expense'} Manager Approval`,
+        `Your manager has approved your ${type} request. It is now pending final review.`,
+        'info',
+        '/dashboard',
+        '',
+        'Manager'
+      );
+    }
+  }
+
+  // Update status in central requests table
+  const searchType = type === 'leave' ? 'Leave Request' : 'Reimbursement';
+  const requests = getSheetData('requests');
+  const centralReq = requests.find(r => String(r.user_id) === String(request.employee_id) && r.form_type === searchType && r.status !== 'approved' && r.status !== 'rejected');
+  if (centralReq) {
+    updateRequestStatus(centralReq.id, newStatus, approver_id);
   }
   
   clearCache(request.employee_id);
@@ -553,8 +581,18 @@ function handleRejectRequest(params) {
       `${type === 'leave' ? 'Leave' : 'Expense'} Rejected`,
       `Your ${type} request was not approved. Check dashboard for details.`,
       'error',
-      '/dashboard'
+      '/dashboard',
+      '',
+      'Approver'
     );
+    
+    // Update status in central requests table
+    const searchType = type === 'leave' ? 'Leave Request' : 'Reimbursement';
+    const requests = getSheetData('requests');
+    const centralReq = requests.find(r => String(r.user_id) === String(request.employee_id) && r.form_type === searchType && r.status !== 'approved' && r.status !== 'rejected');
+    if (centralReq) {
+      updateRequestStatus(centralReq.id, 'rejected', approver_id);
+    }
   }
   
   clearCache(request.employee_id);
@@ -628,6 +666,10 @@ function handlePostAnnouncement(params) {
     priority: priority || 'normal'
   };
   appendToSheet('announcements', announcement);
+  
+  // Notify all users
+  createNotification('', 'New Announcement: ' + title, message, 'info', '/dashboard', 'All', 'Admin');
+  
   cleanupOldAnnouncements();
   clearCache();
   return { success: true, announcement };
@@ -675,8 +717,21 @@ function getLeaveRequests(params) {
 }
 
 function getNotifications(params) {
-  const { employee_id } = params;
-  return getSheetData('notifications').filter(n => n.employee_id == employee_id).reverse();
+  const { employee_id, department } = params;
+  const data = getSheetData('notifications');
+  
+  return data.filter(n => {
+    // 1. Personal notifications
+    if (n.employee_id && String(n.employee_id) === String(employee_id)) return true;
+    
+    // 2. Announcement / All notifications
+    if (n.target_department === 'All') return true;
+    
+    // 3. Department-specific notifications
+    if (department && n.target_department === department) return true;
+    
+    return false;
+  }).reverse();
 }
 
 function getExpenses(params) {
@@ -694,19 +749,52 @@ function handleMarkNotificationRead(params) {
   return { success: true };
 }
 
-function createNotification(employee_id, title, message, type, target_path) {
+function createNotification(employee_id, title, message, type, target_path, target_department, sender_role) {
   const notification = {
     id: Utilities.getUuid(),
-    employee_id,
-    employee_name: getEmployeeName(employee_id),
+    employee_id: employee_id || '', // Can be empty for department-wide notifications
+    employee_name: employee_id ? getEmployeeName(employee_id) : 'All',
     title,
     message,
     timestamp: new Date().toISOString(),
     read: false,
     type,
-    target_path
+    target_path,
+    target_department: target_department || '',
+    sender_role: sender_role || ''
   };
   appendToSheet('notifications', notification);
+}
+
+function createRequest(user_id, form_type, title, department_responsible, status) {
+  const request = {
+    id: Utilities.getUuid(),
+    user_id: user_id,
+    employee_name: getEmployeeName(user_id),
+    form_type: form_type,
+    title: title,
+    department_responsible: department_responsible,
+    status: status || 'Pending',
+    submitted_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    reviewed_by: ''
+  };
+  appendToSheet('requests', request);
+  return request.id;
+}
+
+function updateRequestStatus(request_id, status, reviewed_by) {
+  updateRowInSheet('requests', 'id', request_id, {
+    status: status,
+    updated_at: new Date().toISOString(),
+    reviewed_by: reviewed_by
+  });
+}
+
+function getUserRequests(params) {
+  const { employee_id } = params;
+  if (!employee_id) throw new Error("Employee ID required");
+  return getSheetData('requests').filter(r => String(r.user_id) === String(employee_id)).reverse();
 }
 
 function getEmployeeName(employee_id) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import RequestTracking from "@/components/RequestTracking";
 import { appsScriptFetch } from "@/lib/api";
 import {
     Users,
@@ -265,6 +266,8 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-8">
+                    <RequestTracking />
+                    
                     <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8 premium-card">
                         <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-6 md:mb-8 flex items-center gap-3">
                             <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
