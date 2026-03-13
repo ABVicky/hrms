@@ -276,6 +276,25 @@ function updateRowInSheet(sheetName, searchColumnHeader, searchValue, updateData
   return false;
 }
 
+function deleteRowFromSheet(sheetName, searchColumnHeader, searchValue) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return false;
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const searchColIndex = headers.indexOf(searchColumnHeader);
+  
+  if (searchColIndex === -1) throw new Error("Column not found: " + searchColumnHeader);
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][searchColIndex] == searchValue) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
 function getTodayStr() {
   return Utilities.formatDate(new Date(), SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd");
 }
@@ -1313,7 +1332,7 @@ function handleAddTaskComment(params) {
 function handleGetPersonalTodos(params) {
   const { employee_id } = params;
   const data = getSheetData('personal_todos');
-  return data.filter(t => t.employee_id === String(employee_id));
+  return data.filter(t => String(t.employee_id) === String(employee_id));
 }
 
 function handleCreatePersonalTodo(params) {
@@ -1329,18 +1348,18 @@ function handleCreatePersonalTodo(params) {
     created_at: new Date().toISOString()
   };
   
-  addRowToSheet('personal_todos', newTodo);
+  appendToSheet('personal_todos', newTodo);
   return { success: true, todo: newTodo };
 }
 
 function handleUpdatePersonalTodo(params) {
   const { todo_id, updates } = params;
-  updateRowInSheet('personal_todos', 'todo_id', todo_id, updates);
+  updateRowInSheet('personal_todos', 'todo_id', String(todo_id), updates);
   return { success: true };
 }
 
 function handleDeletePersonalTodo(params) {
   const { todo_id } = params;
-  deleteRowFromSheet('personal_todos', 'todo_id', todo_id);
+  deleteRowFromSheet('personal_todos', 'todo_id', String(todo_id));
   return { success: true };
 }

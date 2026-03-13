@@ -80,7 +80,118 @@ export default function WorkManagement() {
         due_date: ''
     });
 
-    const departments = ['All', 'HR', 'Marketing', 'Sales', 'Development', 'Finance', 'Operations', 'Design'];
+    const departments = ['All', 'HR', 'Marketing', 'Sales', 'Development', 'Finance', 'Operations', 'Design', '360 Agency'];
+
+    const AGENCY_TEMPLATE = [
+        {
+            group: "Strategy & SEO",
+            projects: [
+                {
+                    name: "Website SEO & Organic Growth",
+                    description: "End-to-end SEO management including technical, on-page, and off-page optimization.",
+                    tasks: [
+                        { title: "Keyword Research & Content Mapping", priority: "High" },
+                        { title: "Technical SEO Audit & Fixes", priority: "High" },
+                        { title: "Backlink Profile Analysis", priority: "Medium" }
+                    ]
+                }
+            ]
+        },
+        {
+            group: "Performance Marketing",
+            projects: [
+                {
+                    name: "Google & Meta Ads Management",
+                    description: "Paid acquisition strategy and campaign management for lead generation.",
+                    tasks: [
+                        { title: "Conversion Tracking Setup", priority: "High" },
+                        { title: "Ad Copywriting & Creative Design", priority: "High" },
+                        { title: "Weekly A/B Testing & Optimization", priority: "Medium" }
+                    ]
+                }
+            ]
+        },
+        {
+            group: "Content Factory",
+            projects: [
+                {
+                    name: "Social Media & Video Content",
+                    description: "Daily social management and high-quality video production for brand awareness.",
+                    tasks: [
+                        { title: "Monthly Content Calendar Creation", priority: "High" },
+                        { title: "Video Production (Reels/Shorts)", priority: "High" },
+                        { title: "Community Engagement & Replies", priority: "Low" }
+                    ]
+                }
+            ]
+        },
+        {
+            group: "Tech & Dev",
+            projects: [
+                {
+                    name: "Web Performance & CRO",
+                    description: "Website speed optimization and conversion rate optimization projects.",
+                    tasks: [
+                        { title: "Landing Page Speed Audit", priority: "Medium" },
+                        { title: "CRO Implementation on Main Funnel", priority: "High" }
+                    ]
+                }
+            ]
+        },
+        {
+            group: "Client Success",
+            projects: [
+                {
+                    name: "Analytics & Client Reporting",
+                    description: "Data-driven reporting and monthly performance reviews for clients.",
+                    tasks: [
+                        { title: "GA4 & GTM Setup", priority: "High" },
+                        { title: "Monthly Performance Dashboard Prep", priority: "Medium" },
+                        { title: "Client Strategy Monthly Call", priority: "Medium" }
+                    ]
+                }
+            ]
+        }
+    ];
+
+    const [isInitializing, setIsInitializing] = useState(false);
+
+    const handleInitializeAgencySpace = async () => {
+        if (!window.confirm("This will create a default 360 Agency structure with projects and tasks in this space. Continue?")) return;
+        
+        setIsInitializing(true);
+        try {
+            for (const group of AGENCY_TEMPLATE) {
+                for (const projData of group.projects) {
+                    const res = await createProject({
+                        department: selectedSpace,
+                        project_group: group.group,
+                        name: projData.name,
+                        description: projData.description,
+                        created_by: user?.employee_id
+                    });
+
+                    if (res.project) {
+                        for (const taskData of projData.tasks) {
+                            await createTask({
+                                project_id: res.project.project_id,
+                                title: taskData.title,
+                                priority: taskData.priority,
+                                created_by: user?.employee_id
+                            });
+                        }
+                    }
+                }
+            }
+            alert("Space initialized successfully!");
+            fetchInitialProjects(selectedSpace);
+        } catch (error) {
+            console.error(error);
+            alert("Error initializing space template");
+        } finally {
+            setIsInitializing(false);
+        }
+    };
 
     useEffect(() => {
         if (!loading && user) {
@@ -439,9 +550,26 @@ export default function WorkManagement() {
                     </div>
                     
                     {!selectedProject && (
-                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 border-dashed mb-4">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Active Space</div>
-                            <div className="text-sm font-bold text-slate-700">{user?.role === 'Super Admin' ? selectedSpace : (user?.department || 'My Department')}</div>
+                        <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 border-dashed mb-4">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Active Space</div>
+                                    <div className="text-sm font-bold text-slate-700">{user?.role === 'Super Admin' ? selectedSpace : (user?.department || 'My Department')}</div>
+                                </div>
+                                <div className="p-2 bg-white rounded-xl shadow-sm">
+                                    <Briefcase className="text-indigo-500" size={16} />
+                                </div>
+                            </div>
+                            
+                            {projects.length === 0 && (
+                                <button
+                                    disabled={isInitializing}
+                                    onClick={handleInitializeAgencySpace}
+                                    className={`w-full mt-2 py-2 px-3 bg-white border border-indigo-100 rounded-xl text-[10px] font-black uppercase tracking-tighter text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 ${isInitializing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    {isInitializing ? 'Creating Setup...' : 'Setup Workspace for Agency'}
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -502,8 +630,12 @@ export default function WorkManagement() {
                         </div>
                     ))}
                     {projects.length === 0 && !isFetching && viewMode === 'projects' && (
-                        <div className="text-center p-6 text-slate-500 text-sm font-medium">
-                            No projects found for {user?.department}
+                        <div className="flex flex-col items-center justify-center p-12 text-center bg-slate-50/50 rounded-3xl border border-slate-200 border-dashed">
+                            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
+                                <Plus className="text-slate-300" size={32} />
+                            </div>
+                            <h4 className="font-bold text-slate-800 mb-1">Empty Space</h4>
+                            <p className="text-xs text-slate-500 max-w-[200px] mb-6">Start by creating a project manually or use our agency template above.</p>
                         </div>
                     )}
                 </div>
@@ -729,13 +861,16 @@ export default function WorkManagement() {
                                         {user?.role === 'Super Admin' && (
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Department</label>
-                                                <input 
-                                                    type="text" 
+                                                <select 
                                                     value={newProject.department}
                                                     onChange={e => setNewProject({...newProject, department: e.target.value})}
                                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700"
-                                                    placeholder="HR, Finance, etc."
-                                                />
+                                                >
+                                                    <option value="">Select Department</option>
+                                                    {departments.filter(d => d !== 'All').map(d => (
+                                                        <option key={d} value={d}>{d}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         )}
 
