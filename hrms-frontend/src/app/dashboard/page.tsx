@@ -38,13 +38,22 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function loadStats() {
+        // PERF: Load from local storage immediately (SWR)
+        const cachedStats = localStorage.getItem(`hrms_stats_${user?.employee_id}`);
+        if (cachedStats) {
+            setStats(JSON.parse(cachedStats));
+            setLoading(false);
+        }
+
+        async function loadStats(isBackground = false) {
+            if (!isBackground && !cachedStats) setLoading(true);
             try {
                 const data = await appsScriptFetch("/dashboard-stats", { 
                     employee_id: user?.employee_id, 
                     role: user?.role 
                 });
                 setStats(data);
+                localStorage.setItem(`hrms_stats_${user?.employee_id}`, JSON.stringify(data));
             } catch (error) {
                 console.error("Failed to load dashboard stats", error);
             } finally {
@@ -54,8 +63,8 @@ export default function DashboardPage() {
         
         loadStats();
 
-        // Auto-refresh every 10 seconds for a "real-time" sync experience
-        const interval = setInterval(loadStats, 10000);
+        // Auto-refresh for a "real-time" sync experience
+        const interval = setInterval(() => loadStats(true), 15000);
         return () => clearInterval(interval);
     }, [user]);
 

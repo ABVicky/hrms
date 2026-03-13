@@ -471,29 +471,50 @@ function getAttendance(params) {
   }
   return data;
 }
-
 function getLatestStatus(params) {
   const { employee_id } = params;
   if (!employee_id) throw new Error("Employee ID required");
   
-  const data = getSheetData('attendance');
-  const userRecords = data.filter(r => String(r.employee_id).trim() === String(employee_id).trim());
-  
-  if (userRecords.length === 0) return { status: 'none' };
-  
-  const latest = userRecords.sort((a, b) => {
-    const timeA = a.check_in ? new Date(a.check_in).getTime() : 0;
-    const timeB = b.check_in ? new Date(b.check_in).getTime() : 0;
-    return timeB - timeA;
-  })[0];
+  // OPTIMIZATION: Instead of getSheetData (full read), we look from the bottom
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('attendance');
+  if (!sheet) return { status: 'none' };
 
-  const isCheckedIn = latest && latest.check_in && (!latest.check_out || String(latest.check_out).trim() === "" || String(latest.check_out).trim() === "---");
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return { status: 'none' };
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 2).getValues(); // Get ID column (1) and employee_id column (2)
+  
+  let latest = null;
+  // Iterate backwards to find the last record for this employee
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (String(data[i][1]).trim() === String(employee_id).trim()) {
+      // Found the latest! Now fetch the full row to get status
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rowValues = sheet.getRange(i + 2, 1, 1, headers.length).getValues()[0];
+      
+      latest = {};
+      headers.forEach((h, idx) => {
+        let val = rowValues[idx];
+        if (val instanceof Date) {
+          val = Utilities.formatDate(val, SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX");
+        }
+        latest[String(h).trim().toLowerCase()] = val;
+      });
+      break;
+    }
+  }
+
+  if (!latest) return { status: 'none' };
+
+  const isCheckedIn = latest.check_in && (!latest.check_out || String(latest.check_out).trim() === "" || String(latest.check_out).trim() === "---");
   
   return {
     status: isCheckedIn ? 'checked-in' : 'checked-out',
     latest_record: latest
   };
 }
+
 
 function getEmployee(params) {
   const employees = getSheetData('employees');
@@ -601,24 +622,68 @@ function handleRejectRequest(params) {
 function getDashboardStats(params) {
   const { employee_id, role } = params || {};
   const cache = CacheService.getScriptCache();
+  
+  // 1. Global Cache (Check Every 30 seconds for shared data)
+  const globalCacheKey = "dashboard_stats_global";
+  let globalStats = null;
+  const cachedGlobal = cache.get(globalCacheKey);
+  
+  if (cachedGlobal) {
+    globalStats = JSON.parse(cachedGlobal);
+  } else {
+    const employees = getSheetData('employees');
+    const announcements = getSheetData('announcements').slice(-5).reverse();
+    globalStats = {
+      total_employees: employees.filter(e => e.account_status !== 'inactive').length,
+      latest_announcements: announcements
+    };
+    cache.put(globalCacheKey, JSON.stringify(globalStats), 30);
+  }
+
+  // 2. Personal Cache
   const cacheKey = "dashboard_stats_" + (employee_id || "all");
   const cached = cache.get(cacheKey);
   if (cached) {
     return JSON.parse(cached);
   }
 
-  const employees = getSheetData('employees');
-  const attendance = getSheetData('attendance');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const attendanceSheet = ss.getSheetByName('attendance');
   const leaves = getSheetData('leave_requests');
   const expenses = getSheetData('expenses');
-  cleanupOldAnnouncements();
-  const announcements = getSheetData('announcements').slice(-5).reverse();
   const notifications = getSheetData('notifications').filter(n => n.employee_id == employee_id).slice(-10).reverse();
   
   const today = new Date().toISOString().split('T')[0];
   
-  const todayAttendance = attendance.filter(a => a.date == today);
-  const wfhCount = todayAttendance.filter(a => a.mode === 'wfh').length;
+  // OPTIMIZATION: Only read last ~200 rows of attendance for "Today" stats 
+  // (Assuming no more than 200 people check in/out in a single day, or just to get a safe window)
+  const lastRow = attendanceSheet.getLastRow();
+  const startRow = Math.max(2, lastRow - 500); // Check last 500 rows to be very safe
+  const numRows = lastRow - startRow + 1;
+  
+  let todayAttendance = [];
+  if (numRows > 0) {
+    const attendanceHeaders = attendanceSheet.getRange(1, 1, 1, attendanceSheet.getLastColumn()).getValues()[0];
+    const dateIdx = attendanceHeaders.indexOf('date');
+    const modeIdx = attendanceHeaders.indexOf('mode');
+    const attendanceValues = attendanceSheet.getRange(startRow, 1, numRows, attendanceHeaders.length).getValues();
+    
+    todayAttendance = attendanceValues.filter(row => {
+      let rowDate = row[dateIdx];
+      if (rowDate instanceof Date) {
+        rowDate = Utilities.formatDate(rowDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+      }
+      return String(rowDate) === today;
+    });
+  }
+
+  const wfhCount = todayAttendance.filter(row => {
+    const attendanceHeaders = attendanceSheet.getRange(1, 1, 1, attendanceSheet.getLastColumn()).getValues()[0];
+    const modeIdx = attendanceHeaders.indexOf('mode');
+    return row[modeIdx] === 'wfh';
+  }).length;
+
+  const employees = getSheetData('employees'); // Only read employees for manager lookups
   
   let pending_leaves_list = [];
   let pending_expenses_list = [];
@@ -651,8 +716,8 @@ function getDashboardStats(params) {
     personal_total: personal_total_requests,
     pending_leaves_list,
     pending_expenses_list,
-    latest_announcements: announcements,
-    recent_notifications: notifications
+    recent_notifications: notifications,
+    ...globalStats
   };
   
   // Cache for only 5 seconds to ensure near real-time sync while still protecting the sheet from extreme spam

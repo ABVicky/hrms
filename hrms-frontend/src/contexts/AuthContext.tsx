@@ -70,15 +70,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const performAttendanceAction = async (action: 'checkin' | 'checkout', checkinMode: 'office' | 'wfh' = 'wfh') => {
         if (!user) return;
+        
+        // Optimistic UI Update
+        const previousStatus = attendanceStatus;
+        setAttendanceStatus(action === 'checkin' ? 'checked-in' : 'checked-out');
+
         try {
             const endpoint = action === 'checkin' ? '/checkin' : '/checkout';
             const res = await appsScriptFetch(endpoint, {
                 employee_id: user.employee_id,
                 mode: checkinMode
             });
+            // Re-fetch to ensure sync with server but don't clear the optimistic state if not needed
             await refreshAttendanceStatus();
             return res;
         } catch (err) {
+            // Rollback on error
+            setAttendanceStatus(previousStatus);
             console.error("Attendance action failed", err);
             throw err;
         }
