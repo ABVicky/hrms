@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
 import { MapPin, Clock, Home, AlertCircle, Loader2, Power } from "lucide-react";
 import ActiveTimer from "@/components/ActiveTimer";
+import { playAttendanceSound } from "@/lib/utils";
 
 // PLACEHOLDER: Ideally from DB or environment variable
 const OFFICE_COORDS = { lat: 22.596755385565324, lng: 88.39958873340666 };
@@ -99,6 +100,10 @@ export default function AttendancePage() {
                 
                 if (!res) throw new Error("No response from server");
                 console.log(`[v1.1] Action: ${action} response:`, res);
+                
+                // Play sound on success
+                playAttendanceSound(action === 'checkin' ? 'checkin' : 'checkout');
+                
                 setMessage({ type: 'success', text: res.status || 'Success' });
 
                 // Clear success message after 5s

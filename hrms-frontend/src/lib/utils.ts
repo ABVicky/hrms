@@ -23,3 +23,43 @@ export function getImageUrl(url: string | undefined): string | undefined {
     
     return url;
 }
+
+export function playAttendanceSound(type: 'checkin' | 'checkout') {
+    if (typeof window === 'undefined') return;
+    
+    try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'checkin') {
+            // High-pitched, pleasant double-beep
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, now); // A5
+            oscillator.frequency.exponentialRampToValueAtTime(1320, now + 0.1); // E6
+            
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        } else {
+            // Slightly deeper, neutral tone
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, now); // A4
+            oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.2); // A3
+            
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        }
+
+        oscillator.start(now);
+        oscillator.stop(now + 0.5);
+    } catch (e) {
+        console.warn("Audio feedback failed:", e);
+    }
+}
