@@ -784,15 +784,20 @@ function getDashboardStats(params) {
   let pending_leaves_list = [];
   let pending_expenses_list = [];
 
-  if (role === 'Manager') {
+  const roleLower = (role || '').toLowerCase();
+  const isManager = roleLower === 'manager';
+  const isHR = ['super admin', 'hr admin', 'ceo', 'admin'].includes(roleLower);
+  const isFinance = ['super admin', 'finance', 'ceo', 'admin'].includes(roleLower);
+
+  if (isManager) {
     const teamIds = employees.filter(e => e.manager_id == employee_id).map(e => String(e.employee_id));
     pending_leaves_list = leaves.filter(l => l.status === 'pending_manager' && teamIds.includes(String(l.employee_id)));
     pending_expenses_list = expenses.filter(e => e.status === 'pending_manager' && teamIds.includes(String(e.employee_id)));
   } 
-  if (role === 'HR Admin' || role === 'Super Admin') {
+  if (isHR) {
     pending_leaves_list = pending_leaves_list.concat(leaves.filter(l => l.status === 'pending_hr' || l.status === 'pending'));
   }
-  if (role === 'Finance' || role === 'Super Admin') {
+  if (isFinance) {
     pending_expenses_list = pending_expenses_list.concat(expenses.filter(e => e.status === 'pending_finance' || e.status === 'pending'));
   }
 
