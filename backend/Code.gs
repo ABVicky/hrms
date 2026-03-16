@@ -613,7 +613,7 @@ function handleAddEmployee(params) {
   
   // Check if email already exists
   if (employees.find(e => e.email === email)) {
-    throw new Error("Employee with this email already exists");
+    throw new Error("Employee with this email already exists"); 
   }
   
   // Generate ID: ASPIRE001, ASPIRE002... (changed to match ASPIRE branding)
