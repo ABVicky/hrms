@@ -632,7 +632,15 @@ export default function AttendanceAnalyticsPage() {
                                     <EmployeeCard key={emp.employee_id} emp={emp} onClick={() => setSelectedEmp(emp)} />
                                 ))}
                                 {filtered.length === 0 && (
-                                    <div className="col-span-3 py-16 text-center text-slate-400 font-medium">No employees found.</div>
+                                    <div className="col-span-3 py-16 text-center space-y-4">
+                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-3xl inline-block">
+                                            <Users size={40} className="text-slate-300 mx-auto" />
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-500 font-bold">No employees found for analytics.</p>
+                                            <p className="text-slate-400 text-xs mt-1">Check if employees are marked as 'active' in Google Sheets.</p>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </>
