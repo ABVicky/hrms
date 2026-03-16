@@ -601,6 +601,7 @@ function getEmployee(params) {
   // Return all but omitted passwords
   return employees.map(e => {
     delete e.password;
+    return e;
   });
 }
 
@@ -1236,6 +1237,14 @@ function getAttendanceAnalytics(params) {
   const allAttendance = getSheetData('attendance');
   const allEmployees = getSheetData('employees').filter(e => e.account_status !== 'inactive');
 
+  // Optimize: Map attendance by employee_id to avoid nested loops
+  const attendanceByEmp = {};
+  allAttendance.forEach(a => {
+    const empIdStr = String(a.employee_id).trim();
+    if (!attendanceByEmp[empIdStr]) attendanceByEmp[empIdStr] = [];
+    attendanceByEmp[empIdStr].push(a);
+  });
+
   const now = new Date();
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1243,8 +1252,8 @@ function getAttendanceAnalytics(params) {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   function getEmployeeData(empId) {
-    const records = allAttendance.filter(a => {
-      if (String(a.employee_id).trim() !== String(empId).trim()) return false;
+    const empRecords = attendanceByEmp[String(empId).trim()] || [];
+    const records = empRecords.filter(a => {
       const dt = new Date(a.date);
       return !isNaN(dt.getTime()) && dt >= thirtyDaysAgo;
     }).map(computeDayData).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1259,7 +1268,9 @@ function getAttendanceAnalytics(params) {
     };
   }
 
-  const isHR = role === 'Super Admin' || role === 'HR Admin' || role === 'Manager';
+  // Define HR roles that should see the full team view
+  const HR_ROLES = ['Super Admin', 'HR Admin', 'Manager', 'CEO', 'Admin'];
+  const isHR = role && HR_ROLES.some(r => r.toLowerCase() === role.toLowerCase());
 
   if (isHR) {
     // Return summary for all employees (30d data + 7d cards)
@@ -1279,13 +1290,17 @@ function getAttendanceAnalytics(params) {
     });
   } else {
     // Self data only
-    const emp = allEmployees.find(e => String(e.employee_id) === String(employee_id)) || {};
-    const data = getEmployeeData(employee_id);
+    const empIdStr = String(employee_id || '').trim();
+    if (!empIdStr) return [];
+
+    const emp = allEmployees.find(e => String(e.employee_id).trim() === empIdStr) || {};
+    const data = getEmployeeData(empIdStr);
     return [{
-      employee_id: employee_id,
-      name: emp.name || '',
+      employee_id: empIdStr,
+      name: emp.name || 'Member',
       department: emp.department || '',
       role: emp.role || '',
+      profile_picture: emp.profile_picture || '',
       seven_day_data: data.seven_day_data,
       thirty_day_data: data.thirty_day_data,
       stats_30: data.stats_30,
@@ -1293,3 +1308,4 @@ function getAttendanceAnalytics(params) {
     }];
   }
 }
+

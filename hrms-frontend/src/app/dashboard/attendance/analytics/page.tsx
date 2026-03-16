@@ -517,15 +517,28 @@ export default function AttendanceAnalyticsPage() {
     const HR_ROLES = ['Super Admin', 'HR Admin', 'Manager', 'CEO', 'Admin'];
     const isHR = user?.role && HR_ROLES.includes(user.role);
 
-    useEffect(() => {
+    const loadData = async (silent = false) => {
         if (!user) return;
-        appsScriptFetch('/attendance-analytics', {
-            employee_id: user.employee_id,
-            role: user.role
-        }).then((res: any) => {
+        if (!silent) setLoading(true);
+        try {
+            const res = await appsScriptFetch('/attendance-analytics', {
+                employee_id: user.employee_id,
+                role: user.role
+            });
             setData(res || []);
-        }).catch(console.error)
-          .finally(() => setLoading(false));
+        } catch (error) {
+            console.error("Failed to fetch attendance analytics:", error);
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+        
+        // Auto-refresh every 10 seconds (as requested, like the employee/dashboard pages)
+        const interval = setInterval(() => loadData(true), 10000);
+        return () => clearInterval(interval);
     }, [user]);
 
     const selfData = data.find(d => String(d.employee_id) === String(user?.employee_id)) || data[0];
