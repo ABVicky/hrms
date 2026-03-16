@@ -31,8 +31,8 @@ export default function AnnouncementsPage() {
     useEffect(() => {
         loadAnnouncements();
         
-        // Auto-refresh every 10 seconds to keep announcements synced in "real-time"
-        const interval = setInterval(loadAnnouncements, 10000);
+        // Auto-refresh every 5 seconds to keep announcements synced in "real-time"
+        const interval = setInterval(loadAnnouncements, 5000);
         return () => clearInterval(interval);
     }, []);
 

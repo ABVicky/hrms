@@ -58,8 +58,8 @@ export default function DashboardPage() {
         
         loadStats();
 
-        // Auto-refresh every 10 seconds for a "real-time" sync experience
-        const interval = setInterval(loadStats, 10000);
+        // Auto-refresh every 5 seconds for a "real-time" sync experience
+        const interval = setInterval(loadStats, 5000);
         return () => clearInterval(interval);
     }, [user]);
 

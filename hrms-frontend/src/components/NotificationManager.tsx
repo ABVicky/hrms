@@ -106,7 +106,7 @@ export default function NotificationManager() {
             }
         };
 
-        const pollInterval = setInterval(checkNewNotifications, 20000);
+        const pollInterval = setInterval(checkNewNotifications, 5000);
         checkNewNotifications();
 
         return () => clearInterval(pollInterval);

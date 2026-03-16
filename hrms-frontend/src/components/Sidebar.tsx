@@ -28,19 +28,22 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
     if (!user) return null;
 
     const getNavItems = () => {
+        const HR_LEVEL_ROLES = ["Super Admin", "HR Admin", "Manager", "CEO", "Admin"];
+        const isHR = user.role && HR_LEVEL_ROLES.includes(user.role);
+
         const baseItems = [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Attendance", href: user.role === "Super Admin" ? "/dashboard/attendance/analytics" : "/dashboard/attendance", icon: MapPin },
+            { name: "Attendance", href: isHR ? "/dashboard/attendance/analytics" : "/dashboard/attendance", icon: MapPin },
             { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
             { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee },
         ];
 
         // Only show Announcements to those who can manage them
-        if (user.role === "Super Admin" || user.role === "HR Admin") {
+        if (isHR || user.role === "HR Admin") {
             baseItems.splice(1, 0, { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
         }
 
-        if (user.role === "Super Admin" || user.role === "HR Admin") {
+        if (isHR) {
             baseItems.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
         }
 

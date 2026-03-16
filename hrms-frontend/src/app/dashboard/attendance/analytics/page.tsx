@@ -514,7 +514,8 @@ export default function AttendanceAnalyticsPage() {
     const [selectedEmp, setSelectedEmp] = useState<EmployeeAnalytics | null>(null);
     const [search, setSearch] = useState('');
 
-    const isHR = user?.role === 'Super Admin' || user?.role === 'HR Admin' || user?.role === 'Manager';
+    const HR_ROLES = ['Super Admin', 'HR Admin', 'Manager', 'CEO', 'Admin'];
+    const isHR = user?.role && HR_ROLES.includes(user.role);
 
     useEffect(() => {
         if (!user) return;

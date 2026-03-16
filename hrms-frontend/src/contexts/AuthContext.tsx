@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { appsScriptFetch } from "@/lib/api";
 
-type Role = "Super Admin" | "HR Admin" | "Finance" | "Manager" | "Employee";
+type Role = "Super Admin" | "HR Admin" | "Finance" | "Manager" | "Employee" | "CEO" | "Admin";
 
 export interface User {
     employee_id: string;
