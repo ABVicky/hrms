@@ -89,9 +89,9 @@ export default function DashboardPage() {
 
     const { attendance_status } = stats;
 
-    const isStatAdmin = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Manager";
-    const isHR = user?.role === "Super Admin" || user?.role === "HR Admin" || user?.role === "Manager";
-    const isFinance = user?.role === "Super Admin" || user?.role === "Finance" || user?.role === "Manager";
+    const isStatAdmin = user?.role && ['super admin', 'hr admin', 'manager', 'ceo', 'admin'].includes(user.role.toLowerCase());
+    const isHR = isStatAdmin;
+    const isFinance = user?.role && ['super admin', 'finance', 'manager', 'ceo', 'admin'].includes(user.role.toLowerCase());
 
     const getTimeGreeting = () => {
         const hour = new Date().getHours();

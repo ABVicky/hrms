@@ -514,9 +514,9 @@ export default function AttendanceAnalyticsPage() {
     const [selectedEmp, setSelectedEmp] = useState<EmployeeAnalytics | null>(null);
     const [search, setSearch] = useState('');
 
-    const HR_ROLES = ['Super Admin', 'HR Admin', 'Manager', 'CEO', 'Admin'];
-    const isHR = user?.role && HR_ROLES.includes(user.role);
-
+    const isStatAdmin = user?.role && ['super admin', 'hr admin', 'manager', 'ceo', 'admin'].includes(user.role.toLowerCase());
+    const isHR = isStatAdmin;
+    const isFinance = user?.role && ['super admin', 'finance', 'manager', 'ceo', 'admin'].includes(user.role.toLowerCase());
     const loadData = async (silent = false) => {
         if (!user) return;
         if (!silent) setLoading(true);
