@@ -14,7 +14,8 @@ import {
     User,
     RefreshCw,
     Download,
-    Wallet
+    Wallet,
+    BarChart2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePWA } from "@/contexts/PWAContext";
@@ -29,31 +30,45 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
 
     const getNavItems = () => {
         const HR_LEVEL_ROLES = ["Super Admin", "HR Admin", "Manager", "CEO", "Admin"];
+        const ANALYTICS_ROLES = ["Super Admin", "HR Admin", "Admin"];
         const isHR = user.role && HR_LEVEL_ROLES.includes(user.role);
+        const canSeeAllAnalytics = user.role && ANALYTICS_ROLES.includes(user.role);
 
-        const baseItems = [
+        const items: any[] = [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Attendance", href: isHR ? "/dashboard/attendance/analytics" : "/dashboard/attendance", icon: MapPin },
-            { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
-            { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee },
         ];
 
-        // Only show Announcements to those who can manage them
-        if (isHR || user.role === "HR Admin") {
-            baseItems.splice(1, 0, { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
+        // Attendance menu item - Hidden for Super Admin
+        if (user.role !== "Super Admin") {
+            items.push({ name: "Attendance", href: "/dashboard/attendance", icon: MapPin });
         }
 
+        // Analytics menu item - For Admin, HR Admin, Super Admin
+        if (canSeeAllAnalytics) {
+            items.push({ name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 });
+        }
+
+        // Announcements - For HR Admin and above
+        if (isHR || user.role === "HR Admin") {
+            items.push({ name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
+        }
+
+        items.push(
+            { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
+            { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee }
+        );
+
         if (isHR) {
-            baseItems.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
+            items.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
         }
 
         // Salary module visibility
         if (user.role === "Super Admin" || user.department === "Finance" || user.role === "Employee" || user.role === "Manager") {
-            baseItems.push({ name: "Salary", href: "/dashboard/salary", icon: Wallet });
+            items.push({ name: "Salary", href: "/dashboard/salary", icon: Wallet });
         }
 
-        baseItems.push({ name: "Settings", href: "/dashboard/settings", icon: Settings });
-        return baseItems;
+        items.push({ name: "Settings", href: "/dashboard/settings", icon: Settings });
+        return items;
     };
 
     const navItems = getNavItems();

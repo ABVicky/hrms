@@ -48,9 +48,6 @@ export default function AttendancePage() {
     const streamRef = useRef<MediaStream | null>(null);
 
     useEffect(() => {
-        if (user?.role === "Super Admin") {
-            router.replace("/dashboard/attendance/analytics");
-        }
         loadAttendance();
     }, [user, router]);
 

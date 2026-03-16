@@ -791,7 +791,6 @@ function getDashboardStats(params) {
   const attendance = getSheetData('attendance');
   const leaves = getSheetData('leave_requests');
   const expenses = getSheetData('expenses');
-  cleanupOldAnnouncements();
   const announcements = getSheetData('announcements').slice(-5).reverse();
   const notifications = getSheetData('notifications').filter(n => n.employee_id == employee_id).slice(-10).reverse();
   
@@ -1216,9 +1215,6 @@ function handleApproveSalary(params) {
 function getAttendanceAnalytics(params) {
   const { employee_id, role } = params;
   
-  // LOGGING: Diagnostic entry
-  console.log("Analytics Request:", { employee_id, role });
-
   const LATE_HOUR = 10;
   const LATE_MIN = 15;
 
@@ -1270,9 +1266,6 @@ function getAttendanceAnalytics(params) {
     return statusVal !== 'inactive';
   });
 
-  // LOGGING: Found employees count
-  console.log("Found Active Employees:", allEmployees.length);
-
   // Optimize: Map attendance by employee_id to avoid nested loops
   const attendanceByEmp = {};
   allAttendance.forEach(a => {
@@ -1306,9 +1299,6 @@ function getAttendanceAnalytics(params) {
 
   const isHR = checkRole(role, 'hr');
   
-  // LOGGING: Permission check
-  console.log("Processing as HR:", isHR);
-
   if (isHR) {
     // Return summary for all employees (30d data + 7d cards)
     const result = allEmployees.map(emp => {
@@ -1325,8 +1315,6 @@ function getAttendanceAnalytics(params) {
         stats_7: data.stats_7
       };
     });
-    // LOGGING: Final result size
-    console.log("Returning team data for", result.length, "employees");
     return result;
   } else {
     // Self data only
