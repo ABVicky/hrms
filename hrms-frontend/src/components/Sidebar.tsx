@@ -12,7 +12,6 @@ import {
     Users,
     Settings,
     User,
-    Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
@@ -26,12 +25,15 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
     const getNavItems = () => {
         const baseItems = [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
             { name: "Attendance", href: "/dashboard/attendance", icon: MapPin },
             { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
             { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
-            { name: "Work", href: "/dashboard/work", icon: Briefcase },
         ];
+
+        // Only show Announcements to those who can manage them
+        if (user.role === "Super Admin" || user.role === "HR Admin") {
+            baseItems.splice(1, 0, { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
+        }
 
         if (user.role === "Super Admin" || user.role === "HR Admin") {
             baseItems.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
@@ -95,18 +97,18 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                 </nav>
 
                 {/* User preview */}
-                <div className="mt-auto p-6">
-                    <div className="bg-gradient-to-br from-slate-900 to-black p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden group transition-all duration-500 hover:border-indigo-500/30">
+                <div className="mt-auto p-4">
+                    <div className="bg-gradient-to-br from-slate-900 to-black p-4 rounded-[2rem] border border-slate-800 shadow-2xl relative overflow-hidden group transition-all duration-500 hover:border-indigo-500/30">
                         {/* Soft Glow */}
                         <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700"></div>
                         
-                        <div className="flex items-center gap-4 relative z-10">
+                        <div className="flex items-center gap-3 relative z-10">
                             <div className="relative shrink-0">
                                 {user.profile_picture ? (
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
                                         alt="" 
-                                        className="absolute inset-0 w-12 h-12 rounded-[1.2rem] object-cover ring-2 ring-slate-800 shadow-xl z-10 transition-all duration-500 group-hover:scale-105"
+                                        className="absolute inset-0 w-11 h-11 rounded-xl object-cover ring-2 ring-slate-800 shadow-xl z-10 transition-all duration-500 group-hover:scale-105"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).style.opacity = '0';
                                         }}
@@ -115,19 +117,19 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                         }}
                                     />
                                 ) : null}
-                                <div className="w-12 h-12 rounded-[1.2rem] bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-700">
-                                    <User size={24} strokeWidth={2.5} />
+                                <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-700">
+                                    <User size={20} strokeWidth={2.5} />
                                 </div>
-                                <div className={`absolute -top-1 -right-1 w-4 h-4 border-[3.5px] border-slate-950 rounded-full shadow-lg z-20 transition-all duration-700 ${
+                                <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-lg z-20 transition-all duration-700 ${
                                     attendanceStatus === 'checked-in' ? 'bg-emerald-500 shadow-emerald-500/20' : 
                                     attendanceStatus === 'checked-out' ? 'bg-rose-500 shadow-rose-500/20' : 
                                     'bg-slate-600'
                                 }`}></div>
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-base font-black text-white truncate tracking-tight group-hover:text-indigo-300 transition-colors">{user.name}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-indigo-300 transition-colors">{user.name}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                                         {user.role}
                                     </span>
                                 </div>

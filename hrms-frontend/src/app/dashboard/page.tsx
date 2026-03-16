@@ -202,10 +202,12 @@ export default function DashboardPage() {
                                     Live Sync
                                 </div>
                             </div>
-                            <Link href="/dashboard/announcements" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group/link">
-                                View All
-                                <ChevronRight size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
-                            </Link>
+                            {(user?.role === "Super Admin" || user?.role === "HR Admin") && (
+                                <Link href="/dashboard/announcements" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group/link">
+                                    View All
+                                    <ChevronRight size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
+                                </Link>
+                            )}
                         </div>
                         <div className="p-5 md:p-7">
                             <div className="space-y-4 md:space-y-6">
