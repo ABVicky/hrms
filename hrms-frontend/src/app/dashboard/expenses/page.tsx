@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
-import { Receipt, AlertCircle, Upload, Info, Loader2 } from "lucide-react";
+import { IndianRupee, AlertCircle, Upload, Info, Loader2 } from "lucide-react";
 
 export default function ExpensesPage() {
     const { user } = useAuth();
@@ -89,7 +89,7 @@ export default function ExpensesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 md:px-0">
                 <div className="flex items-center gap-3 md:gap-4">
                     <div className="p-3 md:p-4 bg-white shadow-sm ring-1 ring-slate-100 text-emerald-600 rounded-[1.25rem] md:rounded-[1.5rem]">
-                        <Receipt size={24} strokeWidth={2.5} />
+                        <IndianRupee size={24} strokeWidth={2.5} />
                     </div>
                     <div>
                         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Expenses</h1>
@@ -243,7 +243,7 @@ export default function ExpensesPage() {
                                     <p className="text-xs text-slate-600 leading-relaxed italic">"{expense.description}"</p>
                                 </div>
                                 {expense.receipt_file && (
-                                    <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-slate-50 transition-all shadow-sm">
+                                    <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-slate-50 transition-all shadow-sm">
                                         <Info size={14} />
                                         View Attachment
                                     </a>
@@ -305,7 +305,7 @@ export default function ExpensesPage() {
                                     </td>
                                     <td className="px-10 py-8 text-right">
                                         {expense.receipt_file ? (
-                                            <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-slate-50 transition-all shadow-sm">
+                                            <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-slate-50 transition-all shadow-sm">
                                                 <Info size={14} />
                                                 View
                                             </a>

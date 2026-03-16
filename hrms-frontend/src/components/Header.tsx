@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, LogOut, Check, User, Clock } from "lucide-react";
+import { Bell, LogOut, Check, User, Clock, Download, RefreshCw } from "lucide-react";
 import { appsScriptFetch } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { usePWA } from "@/contexts/PWAContext";
 
 export default function Header() {
     const { user, logout, attendanceStatus } = useAuth();
+    const { isInstallable, installApp, updateApp, swUpdateAvailable } = usePWA();
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -86,25 +88,44 @@ export default function Header() {
                 </div>
 
                 {/* Mobile Center: Title */}
-                <div className="md:hidden absolute left-1/2 transform -translate-x-1/2 font-black text-xl text-slate-950 tracking-tighter flex items-center gap-1.5">
-                    <img src="/logo.png" alt="" className="w-8 h-8 object-contain" />
-                    <span className="uppercase">HRMS<span className="text-indigo-600">.</span></span>
+                <div className="md:hidden absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+                    <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-rose-100 ring-1 ring-slate-100">
+                        <img src="/logo.png" alt="" className="w-6 h-6 object-contain" />
+                    </div>
+                    <span className="font-black text-xl text-slate-950 tracking-tighter uppercase">ASPIRE<span className="text-rose-600">.</span></span>
                 </div>
 
                 {/* Desktop spacer */}
                 <div className="hidden md:block flex-1" />
 
                 <div className="flex items-center justify-end gap-5 text-slate-600 md:flex-none">
+
+                    {/* Mobile Update/Install Button */}
+                    <div className="md:hidden">
+                        {(isInstallable || swUpdateAvailable) && (
+                            <button
+                                onClick={isInstallable ? installApp : updateApp}
+                                className={`p-3 rounded-2xl transition-all duration-300 active:scale-95 ${
+                                    isInstallable 
+                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm"
+                                    : "bg-rose-50 text-rose-600 border border-rose-100 animate-pulse shadow-sm"
+                                }`}
+                            >
+                                {isInstallable ? <Download size={22} /> : <RefreshCw size={22} className="animate-spin" />}
+                            </button>
+                        )}
+                    </div>
+
                     {/* Notifications */}
                     <div className="relative" id="notification-dropdown">
                         <button
                             onClick={() => setShowNotifications(!showNotifications)}
-                            className={`relative p-3 rounded-2xl transition-all duration-500 transform active:scale-95 ${showNotifications ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-600/30 ring-4 ring-indigo-50' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                            className={`relative p-3 rounded-2xl transition-all duration-500 transform active:scale-95 ${showNotifications ? 'bg-gradient-to-br from-rose-600 to-pink-600 text-white shadow-xl shadow-rose-600/30 ring-4 ring-rose-50' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                                 }`}
                         >
                             <Bell size={22} className={showNotifications ? "fill-white/20 animate-pulse" : "group-hover:rotate-12 transition-transform"} />
                             {unreadCount > 0 && (
-                                <span className={`absolute top-2.5 right-2.5 w-3.5 h-3.5 rounded-full border-[3px] shadow-sm animate-bounce ${showNotifications ? 'bg-white border-indigo-600' : 'bg-rose-500 border-white'}`}></span>
+                                <span className={`absolute top-2.5 right-2.5 w-3.5 h-3.5 rounded-full border-[3px] shadow-sm animate-bounce ${showNotifications ? 'bg-white border-rose-600' : 'bg-rose-500 border-white'}`}></span>
                             )}
                         </button>
 
@@ -122,7 +143,7 @@ export default function Header() {
                                             <h3 className="font-black text-slate-900 text-xl tracking-tight">Recent Activity</h3>
                                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-0.5">Stay updated with your team</p>
                                         </div>
-                                        <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-lg ring-1 ring-indigo-100">
+                                        <div className="px-3 py-1 bg-rose-50 text-rose-600 text-[10px] font-black rounded-lg ring-1 ring-rose-100">
                                             {unreadCount} New
                                         </div>
                                     </div>
@@ -130,10 +151,10 @@ export default function Header() {
                                         {notifications.length > 0 ? (
                                             <div className="space-y-2">
                                                 {notifications.map(notification => (
-                                                    <div key={notification.id} className={`p-5 rounded-[1.8rem] transition-all duration-300 relative overflow-hidden group/notif ${!notification.read ? 'bg-indigo-50/30 hover:bg-indigo-50/60' : 'hover:bg-slate-50'}`}>
+                                                    <div key={notification.id} className={`p-5 rounded-[1.8rem] transition-all duration-300 relative overflow-hidden group/notif ${!notification.read ? 'bg-rose-50/30 hover:bg-rose-50/60' : 'hover:bg-slate-50'}`}>
                                                         <div className="flex justify-between items-start mb-2 relative z-10">
-                                                            <p className="font-extrabold text-slate-900 leading-tight group-hover/notif:text-indigo-600 transition-colors">{notification.title}</p>
-                                                            {!notification.read && <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.5)]"></span>}
+                                                            <p className="font-extrabold text-slate-900 leading-tight group-hover/notif:text-rose-600 transition-colors">{notification.title}</p>
+                                                            {!notification.read && <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(225,29,72,0.5)]"></span>}
                                                         </div>
                                                         <p className="text-sm text-slate-600 leading-relaxed font-medium opacity-80 group-hover/notif:opacity-100 transition-opacity">{notification.message}</p>
                                                         <div className="flex items-center justify-between mt-4 relative z-10">
@@ -142,8 +163,8 @@ export default function Header() {
                                                                 {notification.time}
                                                             </div>
                                                             {!notification.read && (
-                                                                <button onClick={() => markAsRead(notification.id)} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1.5 hover:text-indigo-800 transition-all transform active:scale-95 group/btn">
-                                                                    <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center group-hover/btn:bg-indigo-600 group-hover/btn:text-white transition-colors">
+                                                                <button onClick={() => markAsRead(notification.id)} className="text-[10px] font-black uppercase tracking-widest text-rose-600 flex items-center gap-1.5 hover:text-rose-800 transition-all transform active:scale-95 group/btn">
+                                                                    <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center group-hover/btn:bg-rose-600 group-hover/btn:text-white transition-colors">
                                                                         <Check size={12} className="stroke-[3]" />
                                                                     </div>
                                                                     Clear

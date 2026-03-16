@@ -109,7 +109,7 @@ const HoursTooltip = ({ active, payload, label }: any) => {
     return (
         <div className="bg-white border border-slate-100 rounded-xl shadow-xl p-3 text-xs">
             <p className="font-black text-slate-900 mb-1">{payload[0]?.payload?.day}, {label}</p>
-            <p className="text-indigo-600 font-bold">{payload[0]?.value?.toFixed(1)} hrs worked</p>
+            <p className="text-rose-600 font-bold">{payload[0]?.value?.toFixed(1)} hrs worked</p>
         </div>
     );
 };
@@ -139,7 +139,7 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
             <div className="bg-white rounded-3xl w-full max-w-3xl my-6 shadow-2xl overflow-hidden">
 
                 {/* Header */}
-                <div className="relative bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white">
+                <div className="relative bg-gradient-to-br from-rose-600 to-violet-700 p-6 text-white">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16" />
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
                         <X size={18} />
@@ -154,8 +154,8 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                         </div>
                         <div>
                             <h2 className="text-xl font-black tracking-tight">{emp.name}</h2>
-                            <p className="text-indigo-200 text-sm font-bold">{emp.department} · {emp.role}</p>
-                            <p className="text-indigo-300 text-xs mt-0.5">ID: {emp.employee_id}</p>
+                            <p className="text-rose-200 text-sm font-bold">{emp.department} · {emp.role}</p>
+                            <p className="text-rose-300 text-xs mt-0.5">ID: {emp.employee_id}</p>
                         </div>
                     </div>
                     {/* Stat pills */}
@@ -177,11 +177,11 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                 <div className="p-6 space-y-6">
                     {/* Mode breakdown */}
                     <div className="flex gap-3">
-                        <div className="flex-1 flex items-center gap-3 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                            <MapPin size={18} className="text-indigo-600" />
+                        <div className="flex-1 flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-100">
+                            <MapPin size={18} className="text-rose-600" />
                             <div>
-                                <p className="font-black text-indigo-900 text-lg">{s.office_days}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Office Days</p>
+                                <p className="font-black text-rose-900 text-lg">{s.office_days}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Office Days</p>
                             </div>
                         </div>
                         <div className="flex-1 flex items-center gap-3 p-4 bg-cyan-50 rounded-2xl border border-cyan-100">
@@ -203,7 +203,7 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                     {/* Daily Work Hours Bar Chart */}
                     <div>
                         <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <BarChart2 size={16} className="text-indigo-500" />
+                            <BarChart2 size={16} className="text-rose-500" />
                             Daily Work Hours — Last 30 Days
                         </h3>
                         {chartData.length > 0 ? (
@@ -214,10 +214,10 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
                                         <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 12]} />
                                         <Tooltip content={<HoursTooltip />} />
-                                        <ReferenceLine y={8} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '8h', position: 'right', fontSize: 9, fill: '#94a3b8' }} />
+                                        <ReferenceLine y={9} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '9h', position: 'right', fontSize: 9, fill: '#94a3b8' }} />
                                         <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
                                             {chartData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.hours >= 8 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
+                                                <Cell key={i} fill={entry.hours >= 9 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -273,7 +273,7 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                                     <div className="flex items-center gap-2 text-right">
                                         {!day.absent && (
                                             <>
-                                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border border-cyan-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border border-cyan-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
                                                     {day.mode}
                                                 </span>
                                                 {day.is_late && (
@@ -307,11 +307,11 @@ function EmployeeCard({ emp, onClick }: { emp: EmployeeAnalytics; onClick: () =>
     return (
         <button
             onClick={onClick}
-            className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 text-left hover:shadow-xl hover:shadow-indigo-500/8 hover:-translate-y-1 transition-all duration-300 group w-full"
+            className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 text-left hover:shadow-xl hover:shadow-rose-500/8 hover:-translate-y-1 transition-all duration-300 group w-full"
         >
             {/* Employee info */}
             <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-600 font-black text-sm shrink-0 overflow-hidden ring-1 ring-indigo-100">
+                <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-rose-100 to-violet-100 flex items-center justify-center text-rose-600 font-black text-sm shrink-0 overflow-hidden ring-1 ring-rose-100">
                     {emp.profile_picture ? (
                         <img src={getImageUrl(emp.profile_picture)} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
@@ -319,10 +319,10 @@ function EmployeeCard({ emp, onClick }: { emp: EmployeeAnalytics; onClick: () =>
                     )}
                 </div>
                 <div className="min-w-0">
-                    <p className="font-black text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">{emp.name}</p>
+                    <p className="font-black text-slate-900 text-sm truncate group-hover:text-rose-600 transition-colors">{emp.name}</p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{emp.department}</p>
                 </div>
-                <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors ml-auto shrink-0 group-hover:translate-x-0.5" />
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-rose-500 transition-colors ml-auto shrink-0 group-hover:translate-x-0.5" />
             </div>
 
             {/* 7-day grid */}
@@ -382,20 +382,20 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
             {/* Stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Days Present', value: s.total_present, sub: 'last 30 days', color: 'indigo', icon: CheckCircle2 },
-                    { label: 'Avg Hours/Day', value: `${s.avg_hours}h`, sub: 'standard 8h', color: 'violet', icon: Clock },
+                    { label: 'Days Present', value: s.total_present, sub: 'last 30 days', color: 'rose', icon: CheckCircle2 },
+                    { label: 'Avg Hours/Day', value: `${s.avg_hours}h`, sub: 'standard 9h', color: 'violet', icon: Clock },
                     { label: 'Late Arrivals', value: s.total_late, sub: 'after 10:15 AM', color: 'amber', icon: AlertTriangle },
                     { label: 'WFH Days', value: s.wfh_days, sub: `${s.office_days} office`, color: 'cyan', icon: Home },
                 ].map(stat => {
                     const Icon = stat.icon;
                     const colorMap: Record<string, string> = {
-                        indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                        rose: 'bg-rose-50 text-rose-600 border-rose-100',
                         violet: 'bg-violet-50 text-violet-600 border-violet-100',
                         amber: 'bg-amber-50 text-amber-600 border-amber-100',
                         cyan: 'bg-cyan-50 text-cyan-600 border-cyan-100',
                     };
                     const textColor: Record<string, string> = {
-                        indigo: 'text-indigo-700', violet: 'text-violet-700', amber: 'text-amber-700', cyan: 'text-cyan-700'
+                        rose: 'text-rose-700', violet: 'text-violet-700', amber: 'text-amber-700', cyan: 'text-cyan-700'
                     };
                     return (
                         <div key={stat.label} className={`rounded-3xl border p-5 ${colorMap[stat.color]} flex flex-col gap-2`}>
@@ -413,7 +413,7 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
             {/* Work Hours Chart */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
                 <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-5 flex items-center gap-2">
-                    <BarChart2 size={16} className="text-indigo-500" />
+                    <BarChart2 size={16} className="text-rose-500" />
                     Daily Work Hours — Last 30 Days
                 </h3>
                 {chartData.length > 0 ? (
@@ -424,10 +424,10 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
                                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} interval={2} />
                                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 12]} />
                                 <Tooltip content={<HoursTooltip />} />
-                                <ReferenceLine y={8} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '8h target', position: 'insideTopRight', fontSize: 9, fill: '#94a3b8' }} />
+                                <ReferenceLine y={9} stroke="#e2e8f0" strokeDasharray="4 4" label={{ value: '9h target', position: 'insideTopRight', fontSize: 9, fill: '#94a3b8' }} />
                                 <Bar dataKey="hours" radius={[5, 5, 0, 0]}>
                                     {chartData.map((entry, i) => (
-                                        <Cell key={i} fill={entry.hours >= 8 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
+                                        <Cell key={i} fill={entry.hours >= 9 ? '#4f46e5' : entry.hours > 0 ? '#818cf8' : '#e2e8f0'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -437,8 +437,8 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
                     <div className="h-56 flex items-center justify-center bg-slate-50 rounded-2xl text-slate-400 text-sm font-medium">No attendance records yet</div>
                 )}
                 <div className="flex items-center gap-4 mt-4">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-indigo-600" /><span className="text-[10px] text-slate-500 font-bold">≥ 8h (Full Day)</span></div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-indigo-300" /><span className="text-[10px] text-slate-500 font-bold">Partial Day</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-rose-600" /><span className="text-[10px] text-slate-500 font-bold">≥ 9h (Full Day)</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-rose-300" /><span className="text-[10px] text-slate-500 font-bold">Partial Day</span></div>
                     <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-slate-200" /><span className="text-[10px] text-slate-500 font-bold">Absent</span></div>
                 </div>
             </div>
@@ -490,7 +490,7 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
                             <div className="flex items-center gap-2">
                                 {!day.absent && (
                                     <>
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>{day.mode}</span>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>{day.mode}</span>
                                         {day.is_late && <span className="text-[9px] font-black px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full">+{day.late_by_minutes}m late</span>}
                                         <span className="font-black text-slate-700 text-sm tabular-nums w-10 text-right">{day.working_hours.toFixed(1)}h</span>
                                     </>
@@ -537,7 +537,13 @@ export default function AttendanceAnalyticsPage() {
         : data;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 page-transition pb-10">
+        <>
+            {/* Employee Detail Modal - MOVED OUTSIDE page-transition */}
+            {selectedEmp && (
+                <EmployeeModal emp={selectedEmp} onClose={() => setSelectedEmp(null)} />
+            )}
+
+            <div className="max-w-6xl mx-auto space-y-6 page-transition pb-10">
 
             {/* Header */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -563,7 +569,7 @@ export default function AttendanceAnalyticsPage() {
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
-                    <Loader2 size={40} className="text-indigo-500 animate-spin" />
+                    <Loader2 size={40} className="text-rose-500 animate-spin" />
                     <p className="text-slate-500 font-bold">Loading analytics…</p>
                 </div>
             ) : (
@@ -574,13 +580,13 @@ export default function AttendanceAnalyticsPage() {
                             {/* Summary bar */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[
-                                    { label: 'Total Employees', value: data.length, icon: Users, color: 'indigo' },
+                                    { label: 'Total Employees', value: data.length, icon: Users, color: 'rose' },
                                     { label: 'Present Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0])).length, icon: CheckCircle2, color: 'emerald' },
                                     { label: 'Late This Week', value: data.reduce((s, e) => s + e.stats_7.total_late, 0), icon: AlertTriangle, color: 'amber' },
                                     { label: 'WFH Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0] && d.mode === 'wfh')).length, icon: Home, color: 'cyan' },
                                 ].map(stat => {
                                     const Icon = stat.icon;
-                                    const cmap: Record<string, string> = { indigo: 'bg-indigo-600', emerald: 'bg-emerald-500', amber: 'bg-amber-500', cyan: 'bg-cyan-500' };
+                                    const cmap: Record<string, string> = { rose: 'bg-rose-600', emerald: 'bg-emerald-500', amber: 'bg-amber-500', cyan: 'bg-cyan-500' };
                                     return (
                                         <div key={stat.label} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
                                             <div className={`p-3 rounded-2xl ${cmap[stat.color]} text-white shadow-lg shrink-0`}>
@@ -602,7 +608,7 @@ export default function AttendanceAnalyticsPage() {
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     placeholder="Search by name or department…"
-                                    className="w-full pl-4 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                                    className="w-full pl-4 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-colors"
                                 />
                             </div>
 
@@ -629,10 +635,7 @@ export default function AttendanceAnalyticsPage() {
                 </>
             )}
 
-            {/* Employee Detail Modal */}
-            {selectedEmp && (
-                <EmployeeModal emp={selectedEmp} onClose={() => setSelectedEmp(null)} />
-            )}
-        </div>
+            </div>
+        </>
     );
 }

@@ -3,33 +3,78 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
-import { Users, Mail, Plus, AlertCircle, User } from "lucide-react";
+import { Users, Mail, Plus, AlertCircle, User, X, Loader2, Phone, Briefcase, Calendar as CalendarIcon, Shield, DollarSign } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
 export default function EmployeesPage() {
     const { user } = useAuth();
     const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        department: 'Development',
+        role: 'Employee',
+        salary: '',
+        employee_type: 'Full-time',
+        manager_id: '',
+        joining_date: new Date().toISOString().split('T')[0],
+        password: ''
+    });
+
+    const loadEmployees = async () => {
+        setLoading(true);
+        try {
+            const data = await appsScriptFetch("/employee");
+            setEmployees(data || []);
+        } catch (error) {
+            console.error("Failed to load employees", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        async function loadEmployees() {
-            try {
-                const data = await appsScriptFetch("/employee");
-                setEmployees(data || []);
-            } catch (error) {
-                console.error("Failed to load employees", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // Only fetch if admin
         if (user?.role === "Super Admin" || user?.role === "HR Admin") {
             loadEmployees();
         } else {
             setLoading(false);
         }
     }, [user]);
+
+    const handleAddSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setMessage(null);
+
+        try {
+            await appsScriptFetch("/employee-add", formData);
+            setMessage({ type: 'success', text: 'Employee added successfully!' });
+            setIsAddModalOpen(false);
+            setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                department: 'Development',
+                role: 'Employee',
+                salary: '',
+                employee_type: 'Full-time',
+                manager_id: '',
+                joining_date: new Date().toISOString().split('T')[0],
+                password: ''
+            });
+            loadEmployees();
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.message || 'Failed to add employee' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     if (user?.role !== "Super Admin" && user?.role !== "HR Admin") {
         return (
@@ -54,11 +99,23 @@ export default function EmployeesPage() {
                     </div>
                 </div>
 
-                <button className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-violet-700 transition">
-                    <Plus size={18} />
+                <button 
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-violet-700 transition shadow-lg shadow-violet-200 active:scale-95"
+                >
+                    <Plus size={18} strokeWidth={3} />
                     Add Employee
                 </button>
             </div>
+
+            {message && (
+                <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 ${
+                    message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+                }`}>
+                    <AlertCircle size={18} />
+                    <span className="font-bold text-sm tracking-tight">{message.text}</span>
+                </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 {loading ? (
@@ -115,7 +172,7 @@ export default function EmployeesPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <button className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Edit</button>
+                                            <button className="text-sm text-rose-600 hover:text-rose-800 font-medium">Edit</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -131,6 +188,255 @@ export default function EmployeesPage() {
                     </div>
                 )}
             </div>
+
+
+            {/* Add Employee Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => !isSubmitting && setIsAddModalOpen(false)}></div>
+                    
+                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                        {/* Header */}
+                        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">New Employee</h2>
+                                <p className="text-sm text-slate-500 font-bold tracking-tight opacity-70">Register a new team member to ASPIRE</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="p-2.5 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Form Body */}
+                        <div className="overflow-y-auto flex-1 p-8 space-y-8 custom-scrollbar">
+                            <form id="add-employee-form" onSubmit={handleAddSubmit} className="space-y-8">
+                                {/* Section 1: Basic Info */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                        Basic Information
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">
+                                                    <User size={18} />
+                                                </div>
+                                                <input 
+                                                    type="text" 
+                                                    required
+                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    placeholder="John Doe"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">
+                                                    <Mail size={18} />
+                                                </div>
+                                                <input 
+                                                    type="email" 
+                                                    required
+                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    placeholder="john@agency.com"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">
+                                                    <Phone size={18} />
+                                                </div>
+                                                <input 
+                                                    type="tel" 
+                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    placeholder="+91 00000 00000"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Joining Date</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <CalendarIcon size={18} />
+                                                </div>
+                                                <input 
+                                                    type="date" 
+                                                    required
+                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    value={formData.joining_date}
+                                                    onChange={(e) => setFormData({...formData, joining_date: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 2: Professional Details */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                        Professional Details
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Department</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <Shield size={18} />
+                                                </div>
+                                                <select 
+                                                    required
+                                                    className="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                    value={formData.department}
+                                                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                                                >
+                                                    <option value="Development">Development</option>
+                                                    <option value="Design">Design</option>
+                                                    <option value="Marketing">Marketing</option>
+                                                    <option value="HR">Human Resources</option>
+                                                    <option value="Finance">Finance</option>
+                                                    <option value="Operations">Operations</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Role / Position</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <Briefcase size={18} />
+                                                </div>
+                                                <select 
+                                                    required
+                                                    className="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                    value={formData.role}
+                                                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                                >
+                                                    <option value="Employee">Employee</option>
+                                                    <option value="Manager">Manager</option>
+                                                    <option value="HR Admin">HR Admin</option>
+                                                    <option value="Finance">Finance</option>
+                                                    <option value="Super Admin">Super Admin</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Salary (Monthly)</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <DollarSign size={18} />
+                                                </div>
+                                                <input 
+                                                    type="number" 
+                                                    required
+                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    placeholder="0"
+                                                    value={formData.salary}
+                                                    onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Reporting Manager</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <Users size={18} />
+                                                </div>
+                                                <select 
+                                                    className="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                    value={formData.manager_id}
+                                                    onChange={(e) => setFormData({...formData, manager_id: e.target.value})}
+                                                >
+                                                    <option value="">No Manager (Self)</option>
+                                                    {employees.filter(e => e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin').map(manager => (
+                                                        <option key={manager.employee_id} value={manager.employee_id}>
+                                                            {manager.name} ({manager.role})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 3: Credentials */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                        Access Credentials
+                                    </h3>
+                                    
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Initial Password</label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">
+                                                <Shield size={18} />
+                                            </div>
+                                            <input 
+                                                type="password" 
+                                                required
+                                                minLength={6}
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                placeholder="••••••••"
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-400 ml-1">Min. 6 characters. The employee can change this later.</p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex items-center justify-end gap-4 sticky bottom-0">
+                            <button 
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="px-6 py-3.5 font-black uppercase tracking-widest text-[10px] text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                form="add-employee-form"
+                                disabled={isSubmitting}
+                                className="px-10 py-3.5 bg-violet-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Saving Profile...</span>
+                                    </>
+                                ) : (
+                                    <span>Register Employee</span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

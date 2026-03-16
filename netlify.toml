@@ -1,5 +1,5 @@
 [build]
-  base = "hrms-frontend"
+  base = "aspire-frontend"
   command = "npm run build"
   publish = "out"
 

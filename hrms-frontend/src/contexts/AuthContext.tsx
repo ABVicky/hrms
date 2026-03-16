@@ -10,6 +10,7 @@ export interface User {
     employee_id: string;
     name: string;
     email: string;
+    phone?: string;
     role: Role;
     department: string;
     manager_id?: string;
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         // Check local storage for existing session
-        const storedUser = localStorage.getItem("hrms_user");
+        const storedUser = localStorage.getItem("aspire_user");
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const data = await appsScriptFetch("/login", { email, password });
             if (data && data.user) {
                 setUser(data.user);
-                localStorage.setItem("hrms_user", JSON.stringify(data.user));
+                localStorage.setItem("aspire_user", JSON.stringify(data.user));
                 router.push("/dashboard");
             }
         } catch (error) {
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem("hrms_user");
+        localStorage.removeItem("aspire_user");
         router.push("/login");
     };
 
@@ -116,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (user) {
             const updated = { ...user, ...updates };
             setUser(updated);
-            localStorage.setItem("hrms_user", JSON.stringify(updated));
+            localStorage.setItem("aspire_user", JSON.stringify(updated));
         }
     };
 

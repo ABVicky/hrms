@@ -64,7 +64,7 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
         <div className="flex justify-end">
           <button
             onClick={downloadPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors shadow-lg active:scale-95"
           >
             <Download size={18} />
             Download PDF
@@ -82,7 +82,7 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
             <div className="flex items-center gap-2 mb-2">
                <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
                <h1 className="text-2xl font-black tracking-tight text-slate-950 uppercase">
-                HRMS<span className="text-indigo-600">.</span>
+                ASPIRE<span className="text-rose-600">.</span>
                </h1>
             </div>
             <p className="text-slate-500 font-medium">Monthly Salary Statement</p>
@@ -111,7 +111,7 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
           <div className="text-right">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Statement Period</h3>
             <div className="flex items-center justify-end gap-2 text-slate-900 font-bold text-lg">
-              <Calendar size={18} className="text-indigo-500" />
+              <Calendar size={18} className="text-rose-500" />
               {slip.month_year}
             </div>
             <p className="text-slate-500 text-sm mt-1">Generated: {new Date(slip.generated_date).toLocaleDateString()}</p>
@@ -130,7 +130,7 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
           </div>
           <div className="text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Payable Days</p>
-            <p className="text-xl font-bold text-indigo-600">{slip.total_payable_days}</p>
+            <p className="text-xl font-bold text-rose-600">{slip.total_payable_days}</p>
           </div>
         </div>
 
@@ -164,7 +164,7 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
         </div>
 
         {/* Total */}
-        <div className="bg-indigo-600 rounded-2xl p-6 text-white flex justify-between items-center">
+        <div className="bg-rose-600 rounded-2xl p-6 text-white flex justify-between items-center">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Total Payable Amount</p>
             <p className="text-xs opacity-60">Net salary transferred to bank account</p>

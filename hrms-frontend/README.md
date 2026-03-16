@@ -1,4 +1,4 @@
-# HRMS - Digital Agency Management System
+# ASPIRE - Digital Agency Management System
 
 A Progressive Web App (PWA) built with Next.js and Google Apps Script to manage human resources, attendance, leaves, and expenses.
 

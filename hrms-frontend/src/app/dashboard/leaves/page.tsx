@@ -58,7 +58,7 @@ export default function LeavesPage() {
         <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 page-transition pb-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 md:px-0">
                 <div className="flex items-center gap-3 md:gap-4">
-                    <div className="p-3 md:p-4 bg-white shadow-sm ring-1 ring-slate-100 text-indigo-600 rounded-[1.25rem] md:rounded-[1.5rem]">
+                    <div className="p-3 md:p-4 bg-white shadow-sm ring-1 ring-slate-100 text-rose-600 rounded-[1.25rem] md:rounded-[1.5rem]">
                         <Calendar size={24} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -85,7 +85,7 @@ export default function LeavesPage() {
                             <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Leave Type</label>
                             <select
                                 required
-                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 appearance-none text-sm md:text-base"
+                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-bold text-slate-700 appearance-none text-sm md:text-base"
                                 value={formData.leave_type}
                                 onChange={(e) => setFormData({ ...formData, leave_type: e.target.value })}
                             >
@@ -102,8 +102,8 @@ export default function LeavesPage() {
                                     type="file"
                                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                 />
-                                <div className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-slate-50 border border-dashed border-slate-200 rounded-xl md:rounded-2xl flex items-center gap-3 text-slate-400 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 transition-all text-xs md:text-sm font-bold">
-                                    <AlertCircle size={18} className="text-slate-300 group-hover:text-indigo-400" />
+                                <div className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-slate-50 border border-dashed border-slate-200 rounded-xl md:rounded-2xl flex items-center gap-3 text-slate-400 group-hover:border-rose-400 group-hover:bg-rose-50/30 transition-all text-xs md:text-sm font-bold">
+                                    <AlertCircle size={18} className="text-slate-300 group-hover:text-rose-400" />
                                     <span>Supportive Documents</span>
                                 </div>
                             </div>
@@ -116,7 +116,7 @@ export default function LeavesPage() {
                             <input
                                 type="date"
                                 required
-                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 text-sm md:text-base"
+                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-bold text-slate-700 text-sm md:text-base"
                                 value={formData.start_date}
                                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                             />
@@ -126,7 +126,7 @@ export default function LeavesPage() {
                             <input
                                 type="date"
                                 required
-                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 text-sm md:text-base"
+                                className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-bold text-slate-700 text-sm md:text-base"
                                 value={formData.end_date}
                                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                             />
@@ -138,7 +138,7 @@ export default function LeavesPage() {
                         <textarea
                             required
                             rows={3}
-                            className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 text-sm md:text-base"
+                            className="w-full px-4 md:px-5 py-3 md:py-4 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all font-bold text-slate-700 text-sm md:text-base"
                             placeholder="Explain why you need this time off..."
                             value={formData.reason}
                             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
@@ -148,7 +148,7 @@ export default function LeavesPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 md:py-5 px-6 md:px-8 font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-xs md:text-sm rounded-xl md:rounded-2xl text-white transition-all shadow-xl active:scale-95 ${loading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                        className={`w-full py-4 md:py-5 px-6 md:px-8 font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-xs md:text-sm rounded-xl md:rounded-2xl text-white transition-all shadow-xl active:scale-95 ${loading ? 'bg-rose-400' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
                             }`}
                     >
                         {loading ? 'Submitting...' : 'Apply for Leave'}

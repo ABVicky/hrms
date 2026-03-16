@@ -69,7 +69,7 @@ export default function RequestTracking() {
         <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm premium-card overflow-hidden h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
                         <History size={20} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -77,7 +77,7 @@ export default function RequestTracking() {
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Your recent submissions</p>
                     </div>
                 </div>
-                <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                <button className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
                     <History size={20} />
                 </button>
             </div>
@@ -101,8 +101,8 @@ export default function RequestTracking() {
                         }
 
                         return (
-                            <div key={request.id} className={`group p-5 rounded-[2rem] border border-slate-100 bg-gradient-to-br ${gradient} hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 cursor-pointer overflow-hidden relative`}>
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
+                            <div key={request.id} className={`group p-5 rounded-[2rem] border border-slate-100 bg-gradient-to-br ${gradient} hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-500 cursor-pointer overflow-hidden relative`}>
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
                                 
                                 <div className="flex items-start gap-5 relative z-10">
                                     <div className={`shrink-0 w-12 h-12 rounded-2xl ${iconBg} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500 ring-4 ring-white`}>
@@ -110,7 +110,7 @@ export default function RequestTracking() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">
                                                 {request.department_responsible}
                                             </span>
                                             <span className="w-1 h-1 rounded-full bg-slate-200"></span>
@@ -118,7 +118,7 @@ export default function RequestTracking() {
                                                 {request.form_type}
                                             </span>
                                         </div>
-                                        <h4 className="font-extrabold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors text-base">
+                                        <h4 className="font-extrabold text-slate-900 leading-tight group-hover:text-rose-600 transition-colors text-base">
                                             {request.title}
                                         </h4>
                                         <div className="flex items-center justify-between mt-4">
@@ -147,7 +147,7 @@ export default function RequestTracking() {
                 )}
             </div>
             
-            <button className="mt-6 w-full py-4 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors border-t border-slate-50 group flex items-center justify-center gap-2">
+            <button className="mt-6 w-full py-4 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-colors border-t border-slate-50 group flex items-center justify-center gap-2">
                 View All History <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
         </div>

@@ -3,8 +3,8 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
+  --primary: #e11d48;
+  --primary-hover: #be185d;
   --glass: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.3);
 }

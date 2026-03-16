@@ -34,9 +34,11 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <div className="text-center">
-                    <img src="/logo.png" alt="HRMS Logo" className="w-16 h-16 mx-auto mb-4 object-contain" />
+                    <div className="w-20 h-20 bg-white shadow-xl shadow-rose-200/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 ring-1 ring-slate-100">
+                        <img src="/logo.png" alt="ASPIRE Logo" className="w-12 h-12 object-contain" />
+                    </div>
                     <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">
-                        HRMS Portal
+                        ASPIRE Portal
                     </h2>
                     <p className="mt-2 text-sm text-slate-500">
                         Sign in to access your dashboard
@@ -62,7 +64,7 @@ export default function LoginPage() {
                                 <input
                                     type="email"
                                     required
-                                    className="pl-10 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow sm:text-sm"
+                                    className="pl-10 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-shadow sm:text-sm"
                                     placeholder="admin@agency.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -81,7 +83,7 @@ export default function LoginPage() {
                                 <input
                                     type="password"
                                     required
-                                    className="pl-10 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow sm:text-sm"
+                                    className="pl-10 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-shadow sm:text-sm"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -93,7 +95,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-white ${loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className={`w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-white ${loading ? "bg-rose-400 cursor-not-allowed" : "bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
                             } transition-colors shadow-md`}
                     >
                         {loading ? "Signing in..." : "Sign in"}

@@ -5,14 +5,14 @@ export const dynamic = 'force-static';
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'HRMS Digital Agency',
-        short_name: 'HRMS',
+        name: 'ASPIRE Digital Agency',
+        short_name: 'ASPIRE',
         description: 'Progressive Web App for HR Management',
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait-primary',
         background_color: '#ffffff',
-        theme_color: '#4f46e5', // Indigo-600 to match branding
+        theme_color: '#e11d48', // Rose-600 to match branding
         categories: ['business', 'productivity'],
         icons: [
             {

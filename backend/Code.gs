@@ -1,4 +1,4 @@
-const VERSION = "1.3";
+const VERSION = "1.5";
 
 function setupDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -147,8 +147,15 @@ function handleRequest(e, method) {
       case '/attendance-analytics':
         result = getAttendanceAnalytics(params);
         break;
+      case '/update-password':
+        result = handleUpdatePassword(params);
+        break;
+      case '/employee-add':
+        result = handleAddEmployee(params);
+        break;
+
       default:
-        throw new Error('[v' + VERSION + '] Unknown endpoint: ' + endpoint);
+        throw new Error('[v' + VERSION + '] Unknown endpoint requested: "' + endpoint + '"');
     }
     
     return ContentService.createTextOutput(JSON.stringify({
@@ -314,12 +321,12 @@ function handleCheckin(params) {
       const blob = Utilities.newBlob(decoded, selfie_mime, selfie_filename);
       
       // Get or create the WFH Selfies folder
-      const folderIterator = DriveApp.getFoldersByName("HRMS_WFH_Selfies");
+      const folderIterator = DriveApp.getFoldersByName("ASPIRE_WFH_Selfies");
       let folder;
       if (folderIterator.hasNext()) {
         folder = folderIterator.next();
       } else {
-        folder = DriveApp.createFolder("HRMS_WFH_Selfies");
+        folder = DriveApp.createFolder("ASPIRE_WFH_Selfies");
       }
       
       const file = folder.createFile(blob);
@@ -392,7 +399,9 @@ function handleCheckout(params) {
 function handleLeaveRequest(params) {
   const employees = getSheetData('employees');
   const user = employees.find(e => e.employee_id == params.employee_id);
-  const initialStatus = (user && user.manager_id) ? 'pending_manager' : 'pending_hr';
+  const managerId = user ? user.manager_id : null;
+  const initialStatus = managerId ? 'pending_manager' : 'pending_hr';
+  const targetDept = managerId ? 'Manager' : 'HR';
 
   const request = {
     request_id: Utilities.getUuid(),
@@ -404,18 +413,24 @@ function handleLeaveRequest(params) {
     reason: params.reason,
     status: initialStatus,
     approved_by: '',
-    manager_comment: ''
+    manager_comment: '',
+    created_at: new Date().toISOString()
   };
   
   appendToSheet('leave_requests', request);
   
   // 1. Log in central requests table
-  createRequest(params.employee_id, 'Leave Request', request.leave_type, 'HR', initialStatus);
+  createRequest(params.employee_id, 'Leave Request', request.leave_type, targetDept, initialStatus);
 
-  // 2. Notify HR Department
-  createNotification('', 'New Leave Request', `${request.employee_name} submitted a ${request.leave_type} request.`, 'info', '/dashboard/leaves', 'HR', 'Employee');
+  // 2. Notify next approver
+  if (managerId) {
+    createNotification(String(managerId), 'Team Leave Request', `${request.employee_name} submitted a ${request.leave_type} request for your approval.`, 'info', '/dashboard', '', 'Employee');
+  } else {
+    createNotification('', 'New Leave Request', `${request.employee_name} submitted a ${request.leave_type} request.`, 'info', '/dashboard/leaves', 'HR', 'Employee');
+  }
 
   clearCache(params.employee_id);
+  if (managerId) clearCache(String(managerId));
   return { status: 'Leave requested successfully', request };
 }
 
@@ -426,12 +441,12 @@ function handleExpenseSubmit(params) {
     const splitBase = params.receipt_base64.split(',');
     const decoded = Utilities.base64Decode(splitBase[1] || splitBase[0]);
     const blob = Utilities.newBlob(decoded, params.receipt_mime, params.receipt_filename);
-    const folderIterator = DriveApp.getFoldersByName("HRMS_Expenses");
+    const folderIterator = DriveApp.getFoldersByName("ASPIRE_Expenses");
     let folder;
     if (folderIterator.hasNext()) {
       folder = folderIterator.next();
     } else {
-      folder = DriveApp.createFolder("HRMS_Expenses");
+      folder = DriveApp.createFolder("ASPIRE_Expenses");
     }
     const file = folder.createFile(blob);
     // Open access to anyone with the link
@@ -441,7 +456,9 @@ function handleExpenseSubmit(params) {
   
   const employees = getSheetData('employees');
   const user = employees.find(e => e.employee_id == params.employee_id);
-  const initialStatus = (user && user.manager_id) ? 'pending_manager' : 'pending_finance';
+  const managerId = user ? user.manager_id : null;
+  const initialStatus = managerId ? 'pending_manager' : 'pending_finance';
+  const targetDept = managerId ? 'Manager' : 'Finance';
 
   const expense = {
     expense_id: Utilities.getUuid(),
@@ -453,45 +470,93 @@ function handleExpenseSubmit(params) {
     receipt_file: fileUrl,
     status: initialStatus,
     approved_by: '',
-    payment_status: 'pending'
+    payment_status: 'pending',
+    created_at: new Date().toISOString()
   };
   
   appendToSheet('expenses', expense);
 
   // 1. Log in central requests table
-  createRequest(params.employee_id, 'Reimbursement', expense.category, 'Finance', initialStatus);
+  createRequest(params.employee_id, 'Reimbursement', expense.category, targetDept, initialStatus);
 
-  // 2. Notify Finance Department
-  createNotification('', 'New Reimbursement Claim', `${expense.employee_name} submitted a claim for ₹${expense.amount}.`, 'info', '/dashboard/expenses', 'Finance', 'Employee');
+  // 2. Notify next approver
+  if (managerId) {
+    createNotification(String(managerId), 'Team Expense Claim', `${expense.employee_name} submitted a claim for ₹${expense.amount} for your approval.`, 'info', '/dashboard', '', 'Employee');
+  } else {
+    createNotification('', 'New Reimbursement Claim', `${expense.employee_name} submitted a claim for ₹${expense.amount}.`, 'info', '/dashboard/expenses', 'Finance', 'Employee');
+  }
 
   clearCache(params.employee_id);
+  if (managerId) clearCache(String(managerId));
   return { status: 'Expense submitted successfully', expense };
 }
 
 function handleUpdateProfile(params) {
-  const { employee_id, avatar_base64, avatar_mime, avatar_filename } = params;
-  if (!employee_id || !avatar_base64) throw new Error("Missing required parameters for profile update");
+  const { employee_id, avatar_base64, avatar_mime, avatar_filename, phone } = params;
+  if (!employee_id) throw new Error("Employee ID required for profile update");
   
-  const splitBase = avatar_base64.split(',');
-  const decoded = Utilities.base64Decode(splitBase[1] || splitBase[0]);
-  const blob = Utilities.newBlob(decoded, avatar_mime, avatar_filename);
-  const folderIterator = DriveApp.getFoldersByName("HRMS_Profiles");
-  let folder;
-  if (folderIterator.hasNext()) {
-    folder = folderIterator.next();
-  } else {
-    folder = DriveApp.createFolder("HRMS_Profiles");
+  const updates = {};
+  
+  if (avatar_base64) {
+    const splitBase = avatar_base64.split(',');
+    const decoded = Utilities.base64Decode(splitBase[1] || splitBase[0]);
+    const blob = Utilities.newBlob(decoded, avatar_mime, avatar_filename);
+    const folderIterator = DriveApp.getFoldersByName("ASPIRE_Profiles");
+    let folder;
+    if (folderIterator.hasNext()) {
+      folder = folderIterator.next();
+    } else {
+      folder = DriveApp.createFolder("ASPIRE_Profiles");
+    }
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    updates.profile_picture = "https://drive.google.com/uc?id=" + file.getId();
   }
-  const file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  const fileUrl = "https://drive.google.com/uc?id=" + file.getId();
   
-  // Try to update. (Note: if the 'profile_picture' column is missing from the existing sheet headers, it may be ignored by updateRowInSheet unless added)
-  updateRowInSheet('employees', 'employee_id', employee_id, {
-    profile_picture: fileUrl
-  });
+  if (phone) {
+    updates.phone = phone;
+  }
   
-  return { status: 'Profile picture updated successfully', profile_picture: fileUrl };
+  if (Object.keys(updates).length === 0) {
+    throw new Error("No updates provided");
+  }
+
+  updateRowInSheet('employees', 'employee_id', employee_id, updates);
+  
+  return { status: 'Profile updated successfully', ...updates };
+}
+
+function handleUpdatePassword(params) {
+  const { employee_id, current_password, new_password } = params;
+  if (!employee_id || !current_password || !new_password) throw new Error("Missing parameters");
+  
+  const employees = getSheetData('employees');
+  const user = employees.find(e => e.employee_id == employee_id);
+  
+  if (!user) throw new Error("Employee not found");
+  
+  // Find the row manually to check the password (since getSheetData strips it in some cases, but here we read it directly from sheet data)
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('employees');
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idCol = headers.indexOf('employee_id');
+  const passCol = headers.indexOf('password');
+  
+  let found = false;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][idCol] == employee_id) {
+      if (data[i][passCol] !== current_password) throw new Error("Current password is incorrect");
+      
+      sheet.getRange(i + 1, passCol + 1).setValue(new_password);
+      found = true;
+      break;
+    }
+  }
+  
+  if (!found) throw new Error("Employee record not found");
+  
+  return { success: true };
 }
 
 function getAttendance(params) {
@@ -536,8 +601,52 @@ function getEmployee(params) {
   // Return all but omitted passwords
   return employees.map(e => {
     delete e.password;
-    return e;
   });
+}
+
+function handleAddEmployee(params) {
+  const { name, email, phone, department, role, salary, employee_type, manager_id, joining_date, password } = params;
+  
+  if (!name || !email || !password) throw new Error("Name, Email and Password are required");
+  
+  const employees = getSheetData('employees');
+  
+  // Check if email already exists
+  if (employees.find(e => e.email === email)) {
+    throw new Error("Employee with this email already exists");
+  }
+  
+  // Generate ID: ASPIRE001, ASPIRE002... (changed to match ASPIRE branding)
+  const lastId = employees.length > 0 
+    ? employees.map(e => {
+        const idMatch = String(e.employee_id).match(/ASPIRE(\d+)/);
+        return idMatch ? parseInt(idMatch[1]) : 0;
+      }).sort((a,b) => b-a)[0]
+    : 0;
+  
+  const newId = "ASPIRE" + String(lastId + 1).padStart(3, '0');
+  
+  const newEmployee = {
+    employee_id: newId,
+    name,
+    email,
+    phone: phone || '',
+    department: department || 'General',
+    role: role || 'Employee',
+    salary: salary || 0,
+    employee_type: employee_type || 'Full-time',
+    manager_id: manager_id || '',
+    joining_date: joining_date || getTodayStr(),
+    account_status: 'active',
+    contract_end_date: '',
+    profile_picture: '',
+    password: password
+  };
+  
+  appendToSheet('employees', newEmployee);
+  clearCache();
+  
+  return { status: 'Employee added successfully', employee_id: newId };
 }
 
 function handleApproveRequest(params) {
@@ -559,32 +668,53 @@ function handleApproveRequest(params) {
     approved_by: approver_id
   });
 
-  if (request && newStatus === 'approved') {
-    createNotification(
-      request.employee_id,
-      `${type === 'leave' ? 'Leave' : 'Expense'} Approved`,
-      `Your ${type} request has been fully approved.`,
-      'success',
-      '/dashboard'
-    );
-  } else if (request && role === 'Manager') {
+  if (request) {
+    if (newStatus === 'approved') {
+      createNotification(
+        request.employee_id,
+        `${type === 'leave' ? 'Leave' : 'Expense'} Approved`,
+        `Your ${type} request has been fully approved.`,
+        'success',
+        '/dashboard'
+      );
+    } else if (role === 'Manager') {
+      // 1. Notify Employee
       createNotification(
         request.employee_id,
         `${type === 'leave' ? 'Leave' : 'Expense'} Manager Approval`,
-        `Your manager has approved your ${type} request. It is now pending final review.`,
+        `Your manager has approved your ${type} request. It is now pending final review by ${type === 'leave' ? 'HR' : 'Finance'}.`,
         'info',
         '/dashboard',
         '',
         'Manager'
       );
+      
+      // 2. Notify Next Department (HR/Finance)
+      const nextDept = type === 'leave' ? 'HR' : 'Finance';
+      createNotification(
+        '', 
+        `New ${type === 'leave' ? 'Leave' : 'Expense'} (Manager Approved)`, 
+        `${request.employee_name}'s request was approved by their manager and is now ready for final review.`, 
+        'info', 
+        `/dashboard/${type === 'leave' ? 'leaves' : 'expenses'}`, 
+        nextDept, 
+        'Manager'
+      );
     }
+  }
 
   // Update status in central requests table
   const searchType = type === 'leave' ? 'Leave Request' : 'Reimbursement';
   const requests = getSheetData('requests');
   const centralReq = requests.find(r => String(r.user_id) === String(request.employee_id) && r.form_type === searchType && r.status !== 'approved' && r.status !== 'rejected');
   if (centralReq) {
-    updateRequestStatus(centralReq.id, newStatus, approver_id);
+    const nextDept = newStatus === 'approved' ? (type === 'leave' ? 'HR' : 'Finance') : (type === 'leave' ? 'HR' : 'Finance');
+    updateRowInSheet('requests', 'id', centralReq.id, {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+      reviewed_by: approver_id,
+      department_responsible: nextDept
+    });
   }
   
   clearCache(request.employee_id);
@@ -665,9 +795,15 @@ function getDashboardStats(params) {
     pending_expenses_list = pending_expenses_list.concat(expenses.filter(e => e.status === 'pending_finance' || e.status === 'pending'));
   }
 
+  // Periodic Maintenance
+  if (Math.random() < 0.1) { // 10% chance on dashboard load to trigger maintenance
+    cleanupOldAnnouncements();
+    cleanupOldNotifications();
+  }
+
   // Stats for everyone (Personal)
-  const personal_pending_leaves = leaves.filter(l => l.employee_id == employee_id && l.status === 'pending').length;
-  const personal_pending_expenses = expenses.filter(e => e.employee_id == employee_id && e.status === 'pending').length;
+  const personal_pending_leaves = leaves.filter(l => l.employee_id == employee_id && String(l.status).startsWith('pending')).length;
+  const personal_pending_expenses = expenses.filter(e => e.employee_id == employee_id && String(e.status).startsWith('pending')).length;
   const personal_total_requests = leaves.filter(l => l.employee_id == employee_id).length + expenses.filter(e => e.employee_id == employee_id).length;
 
   // Basic stats
@@ -724,7 +860,7 @@ function cleanupOldAnnouncements() {
   if (timestampIndex === -1) return;
 
   const now = new Date().getTime();
-  const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+  const keepMs = 14 * 24 * 60 * 60 * 1000;
 
   // We iterate backwards to safely delete rows
   for (let i = data.length - 1; i >= 1; i--) {
@@ -732,7 +868,33 @@ function cleanupOldAnnouncements() {
     if (!timestampStr) continue;
 
     const postDate = new Date(timestampStr).getTime();
-    if (now - postDate > twoDaysMs) {
+    if (now - postDate > keepMs) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+}
+
+function cleanupOldNotifications() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('notifications');
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 50) return;
+
+  const headers = data[0];
+  const timestampIndex = headers.indexOf('timestamp');
+  if (timestampIndex === -1) return;
+
+  const now = new Date().getTime();
+  const keepMs = 7 * 24 * 60 * 60 * 1000;
+
+  for (let i = data.length - 1; i >= 1; i--) {
+    const timestampStr = data[i][timestampIndex];
+    if (!timestampStr) continue;
+    
+    const date = new Date(timestampStr).getTime();
+    if (now - date > keepMs) {
       sheet.deleteRow(i + 1);
     }
   }
@@ -826,6 +988,8 @@ function updateRequestStatus(request_id, status, reviewed_by) {
     reviewed_by: reviewed_by
   });
 }
+
+
 
 function getUserRequests(params) {
   const { employee_id } = params;

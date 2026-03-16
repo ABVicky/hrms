@@ -78,8 +78,8 @@ export default function AnnouncementsPage() {
             <div>
                 <div className="flex items-center gap-3">
                     <h1 className="text-2xl font-bold text-slate-900">Manage Announcements</h1>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-[9px] font-black uppercase tracking-widest text-indigo-600 ring-1 ring-indigo-100">
-                        <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse"></div>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 text-[9px] font-black uppercase tracking-widest text-rose-600 ring-1 ring-rose-100">
+                        <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse"></div>
                         Real-time Sync
                     </div>
                 </div>
@@ -87,9 +87,9 @@ export default function AnnouncementsPage() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-indigo-50/50 to-white">
+                <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-rose-50/50 to-white">
                     <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                        <Plus size={20} className="text-indigo-600" />
+                        <Plus size={20} className="text-rose-600" />
                         Create New Announcement
                     </h2>
                 </div>
@@ -115,7 +115,7 @@ export default function AnnouncementsPage() {
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="e.g. Quarterly Townhall Meeting"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-colors"
                                 />
                             </div>
                             <div>
@@ -126,7 +126,7 @@ export default function AnnouncementsPage() {
                                     id="priority"
                                     value={priority}
                                     onChange={(e: any) => setPriority(e.target.value)}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white font-medium"
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-colors bg-white font-medium"
                                 >
                                     <option value="normal">🟢 Normal</option>
                                     <option value="high">High Priority</option>
@@ -146,7 +146,7 @@ export default function AnnouncementsPage() {
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Write your announcement message here..."
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors resize-none"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-colors resize-none"
                             />
                         </div>
                     </div>
@@ -155,7 +155,7 @@ export default function AnnouncementsPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting || !title || !description}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-xl shadow-sm shadow-rose-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {isSubmitting ? "Posting..." : "Post Announcement"}
                         </button>

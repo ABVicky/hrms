@@ -6,10 +6,12 @@ import NotificationManager from "@/components/NotificationManager";
 import PWAHandler from "@/components/PWAHandler";
 import InstallPrompt from "@/components/InstallPrompt";
 
+import { PWAProvider } from "@/contexts/PWAContext";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HRMS Portal",
+  title: "ASPIRE Portal",
   description: "Progressive Web App HR Management System",
   manifest: "/manifest",
   icons: {
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "HRMS Portal",
+    title: "ASPIRE Portal",
   },
   formatDetection: {
     telephone: false,
@@ -45,10 +47,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen`}>
         <AuthProvider>
-          <NotificationManager />
-          <PWAHandler />
-          <InstallPrompt />
-          {children}
+          <PWAProvider>
+            <NotificationManager />
+            <PWAHandler />
+            <InstallPrompt />
+            {children}
+          </PWAProvider>
         </AuthProvider>
       </body>
     </html>

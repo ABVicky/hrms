@@ -71,7 +71,7 @@ export default function SalaryList({ slips, onView, role }: SalaryListProps) {
               <td className="px-6 py-4">
                 <button
                   onClick={() => onView(slip)}
-                  className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all transform group-hover:scale-110"
+                  className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all transform group-hover:scale-110"
                 >
                   <Eye size={18} />
                 </button>
