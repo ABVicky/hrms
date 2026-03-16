@@ -175,6 +175,25 @@ function handleRequest(e, method) {
 // Helper Functions
 // -------------------------------------------------------------
 
+/**
+ * Checks if a user has management/HR permissions.
+ * Case-insensitive.
+ * @param {string} role - The user's role string.
+ * @param {string} type - 'hr' (management) or 'finance'.
+ * @returns {boolean}
+ */
+function checkRole(role, type = 'hr') {
+  if (!role) return false;
+  const roleLower = String(role).trim().toLowerCase();
+  
+  const HR_ROLES = ['super admin', 'hr admin', 'ceo', 'admin', 'manager'];
+  const FINANCE_ROLES = ['super admin', 'finance', 'ceo', 'admin', 'manager'];
+  
+  if (type === 'hr') return HR_ROLES.indexOf(roleLower) !== -1;
+  if (type === 'finance') return FINANCE_ROLES.indexOf(roleLower) !== -1;
+  return false;
+}
+
 function getSheetData(sheetName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(sheetName);
@@ -784,10 +803,9 @@ function getDashboardStats(params) {
   let pending_leaves_list = [];
   let pending_expenses_list = [];
 
-  const roleLower = (role || '').toLowerCase();
-  const isManager = roleLower === 'manager';
-  const isHR = ['super admin', 'hr admin', 'ceo', 'admin'].includes(roleLower);
-  const isFinance = ['super admin', 'finance', 'ceo', 'admin'].includes(roleLower);
+  const isHR = checkRole(role, 'hr');
+  const isFinance = checkRole(role, 'finance');
+  const isManager = (role || '').toLowerCase() === 'manager';
 
   if (isManager) {
     const teamIds = employees.filter(e => e.manager_id == employee_id).map(e => String(e.employee_id));
@@ -1194,8 +1212,12 @@ function handleApproveSalary(params) {
 // -------------------------------------------------------------
 // Attendance Analytics
 // -------------------------------------------------------------
+// -------------------------------------------------------------
 function getAttendanceAnalytics(params) {
   const { employee_id, role } = params;
+  
+  // LOGGING: Diagnostic entry
+  console.log("Analytics Request:", { employee_id, role });
 
   const LATE_HOUR = 10;
   const LATE_MIN = 15;
@@ -1240,7 +1262,16 @@ function getAttendanceAnalytics(params) {
   }
 
   const allAttendance = getSheetData('attendance');
-  const allEmployees = getSheetData('employees').filter(e => e.account_status !== 'inactive');
+  const allEmployeesRaw = getSheetData('employees');
+  
+  // Robustly filter active employees (check both account_status and status headers)
+  const allEmployees = allEmployeesRaw.filter(e => {
+    const statusVal = String(e.account_status || e.status || '').toLowerCase().trim();
+    return statusVal !== 'inactive';
+  });
+
+  // LOGGING: Found employees count
+  console.log("Found Active Employees:", allEmployees.length);
 
   // Optimize: Map attendance by employee_id to avoid nested loops
   const attendanceByEmp = {};
@@ -1273,13 +1304,14 @@ function getAttendanceAnalytics(params) {
     };
   }
 
-  // Define HR roles that should see the full team view
-  const HR_ROLES = ['Super Admin', 'HR Admin', 'Manager', 'CEO', 'Admin'];
-  const isHR = role && HR_ROLES.some(r => r.toLowerCase() === role.toLowerCase());
+  const isHR = checkRole(role, 'hr');
+  
+  // LOGGING: Permission check
+  console.log("Processing as HR:", isHR);
 
   if (isHR) {
     // Return summary for all employees (30d data + 7d cards)
-    return allEmployees.map(emp => {
+    const result = allEmployees.map(emp => {
       const data = getEmployeeData(emp.employee_id);
       return {
         employee_id: emp.employee_id,
@@ -1293,9 +1325,12 @@ function getAttendanceAnalytics(params) {
         stats_7: data.stats_7
       };
     });
+    // LOGGING: Final result size
+    console.log("Returning team data for", result.length, "employees");
+    return result;
   } else {
     // Self data only
-    const empIdStr = String(employee_id || '').trim();
+    const empIdStr = String(employee_id || params.employee_id || '').trim();
     if (!empIdStr) return [];
 
     const emp = allEmployees.find(e => String(e.employee_id).trim() === empIdStr) || {};

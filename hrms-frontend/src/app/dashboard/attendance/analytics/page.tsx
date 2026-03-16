@@ -520,11 +520,14 @@ export default function AttendanceAnalyticsPage() {
     const loadData = async (silent = false) => {
         if (!user) return;
         if (!silent) setLoading(true);
+        const payload = {
+            employee_id: user.employee_id,
+            role: user.role
+        };
+        console.log("Fetching attendance analytics for:", payload);
         try {
-            const res = await appsScriptFetch('/attendance-analytics', {
-                employee_id: user.employee_id,
-                role: user.role
-            });
+            const res = await appsScriptFetch('/attendance-analytics', payload);
+            console.log("Analytics response received:", res ? res.length : 0, "employees");
             setData(res || []);
         } catch (error) {
             console.error("Failed to fetch attendance analytics:", error);
