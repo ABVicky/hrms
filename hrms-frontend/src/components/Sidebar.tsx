@@ -30,17 +30,19 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
     if (!user) return null;
 
     const getNavItems = () => {
-        const HR_LEVEL_ROLES = ["Super Admin", "HR Admin", "Manager", "CEO", "Admin"];
-        const ANALYTICS_ROLES = ["Super Admin", "HR Admin", "Admin"];
-        const isHR = user.role && HR_LEVEL_ROLES.includes(user.role);
-        const canSeeAllAnalytics = user.role && ANALYTICS_ROLES.includes(user.role);
+        const role = user.role?.toLowerCase();
+        const HR_LEVEL_ROLES = ["super admin", "hr admin", "manager", "ceo", "admin"];
+        const ANALYTICS_ROLES = ["super admin", "hr admin", "admin"];
+        
+        const isHR = role && HR_LEVEL_ROLES.includes(role);
+        const canSeeAllAnalytics = role && ANALYTICS_ROLES.includes(role);
 
         const items: any[] = [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         ];
 
         // Attendance menu item - Hidden for Super Admin
-        if (user.role !== "Super Admin") {
+        if (role !== "super admin") {
             items.push({ name: "Attendance", href: "/dashboard/attendance", icon: MapPin });
         }
 
@@ -50,7 +52,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
         }
 
         // Announcements - For HR Admin and above
-        if (isHR || user.role === "HR Admin") {
+        if (isHR || role === "hr admin") {
             items.push({ name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
         }
 
@@ -64,7 +66,8 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
         }
 
         // Salary module visibility
-        if (user.role === "Super Admin" || user.department === "Finance" || user.role === "Employee" || user.role === "Manager") {
+        const isFinanceDept = user.department?.toLowerCase() === "finance";
+        if (role === "super admin" || isFinanceDept || role === "employee" || role === "manager") {
             items.push({ name: "Salary", href: "/dashboard/salary", icon: Wallet });
         }
 

@@ -395,8 +395,9 @@ export default function AnalyticsPage() {
     };
 
     useEffect(() => {
-        const ANALYTICS_ROLES = ["Super Admin", "HR Admin", "Admin"];
-        if (user && !ANALYTICS_ROLES.includes(user.role)) {
+        const ANALYTICS_ROLES = ["super admin", "hr admin", "admin"];
+        const userRole = user?.role?.toLowerCase();
+        if (user && !ANALYTICS_ROLES.includes(userRole)) {
             window.location.href = "/dashboard";
             return;
         }

@@ -10,12 +10,13 @@ export default function BottomNav({ setIsSidebarOpen }: { setIsSidebarOpen: (val
 
     const { user } = useAuth();
 
+    const isSuperAdmin = user?.role?.toLowerCase() === "super admin";
     const navItems = [
         { name: "Home", href: "/dashboard", icon: LayoutDashboard },
         { 
-            name: user?.role === "Super Admin" ? "Analytics" : "Attendance", 
-            href: user?.role === "Super Admin" ? "/dashboard/analytics" : "/dashboard/attendance", 
-            icon: user?.role === "Super Admin" ? BarChart2 : MapPin 
+            name: isSuperAdmin ? "Analytics" : "Attendance", 
+            href: isSuperAdmin ? "/dashboard/analytics" : "/dashboard/attendance", 
+            icon: isSuperAdmin ? BarChart2 : MapPin 
         },
         { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
         { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee },
