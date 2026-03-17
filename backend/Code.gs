@@ -1265,22 +1265,28 @@ function getAttendanceAnalytics(params) {
     const avgHours = totalPresent > 0 ? parseFloat((totalHours / totalPresent).toFixed(1)) : 0;
     const wfhDays = dayData.filter(d => d.mode === 'wfh').length;
     const officeDays = dayData.filter(d => d.mode === 'office').length;
-    return { total_present: totalPresent, total_late: totalLate, avg_hours: avgHours, total_hours: parseFloat(totalHours.toFixed(2)), wfh_days: wfhDays, office_days: officeDays };
+    return { 
+      total_present: totalPresent, 
+      total_late: totalLate, 
+      avg_hours: avgHours, 
+      total_hours: parseFloat(totalHours.toFixed(2)), 
+      wfh_days: wfhDays, 
+      office_days: officeDays 
+    };
   }
 
   const allAttendance = getSheetData('attendance');
   const allEmployeesRaw = getSheetData('employees');
   
-  // Robustly filter active employees (check both account_status and status headers)
   const allEmployees = allEmployeesRaw.filter(e => {
     const statusVal = String(e.account_status || e.status || '').toLowerCase().trim();
     return statusVal !== 'inactive';
   });
 
-  // Optimize: Map attendance by employee_id to avoid nested loops
   const attendanceByEmp = {};
   allAttendance.forEach(a => {
-    const empIdStr = String(a.employee_id).trim();
+    const empIdStr = String(a.employee_id || '').trim();
+    if (!empIdStr) return;
     if (!attendanceByEmp[empIdStr]) attendanceByEmp[empIdStr] = [];
     attendanceByEmp[empIdStr].push(a);
   });
@@ -1292,7 +1298,8 @@ function getAttendanceAnalytics(params) {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   function getEmployeeData(empId) {
-    const empRecords = attendanceByEmp[String(empId).trim()] || [];
+    const empIdStr = String(empId).trim();
+    const empRecords = attendanceByEmp[empIdStr] || [];
     const records = empRecords.filter(a => {
       const dt = new Date(a.date);
       return !isNaN(dt.getTime()) && dt >= thirtyDaysAgo;
@@ -1308,31 +1315,40 @@ function getAttendanceAnalytics(params) {
     };
   }
 
-  const isHR = checkRole(role, 'hr');
+  const roleLower = String(role || '').toLowerCase().trim();
+  const HR_ROLES = ['super admin', 'hr admin', 'ceo', 'admin', 'manager'];
+  const isHR = HR_ROLES.indexOf(roleLower) !== -1;
   
   if (isHR) {
-    // Return summary for all employees (30d data + 7d cards)
-    const result = allEmployees.map(emp => {
-      const data = getEmployeeData(emp.employee_id);
-      return {
-        employee_id: emp.employee_id,
-        name: emp.name,
-        department: emp.department,
-        role: emp.role,
-        profile_picture: emp.profile_picture || '',
-        seven_day_data: data.seven_day_data,
-        thirty_day_data: data.thirty_day_data,
-        stats_30: data.stats_30,
-        stats_7: data.stats_7
-      };
+    return allEmployees.map(emp => {
+      try {
+        const data = getEmployeeData(emp.employee_id);
+        return {
+          employee_id: emp.employee_id,
+          name: emp.name,
+          department: emp.department,
+          role: emp.role,
+          profile_picture: emp.profile_picture || '',
+          seven_day_data: data.seven_day_data,
+          thirty_day_data: data.thirty_day_data,
+          stats_30: data.stats_30,
+          stats_7: data.stats_7
+        };
+      } catch (e) {
+        return {
+          employee_id: emp.employee_id,
+          name: emp.name,
+          error: "Mapping error: " + e.message
+        };
+      }
     });
-    return result;
   } else {
-    // Self data only
-    const empIdStr = String(employee_id || params.employee_id || '').trim();
+    const empIdStr = String(employee_id || '').trim();
     if (!empIdStr) return [];
 
-    const emp = allEmployees.find(e => String(e.employee_id).trim() === empIdStr) || {};
+    const emp = allEmployees.find(e => String(e.employee_id).trim() === empIdStr);
+    if (!emp) return [];
+    
     const data = getEmployeeData(empIdStr);
     return [{
       employee_id: empIdStr,
