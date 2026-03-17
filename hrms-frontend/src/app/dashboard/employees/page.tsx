@@ -138,20 +138,20 @@ export default function EmployeesPage() {
         <div className="space-y-6 max-w-6xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-violet-100 text-violet-600 rounded-xl">
-                        <Users size={24} />
+                    <div className="p-2.5 bg-violet-50 text-violet-600 rounded-lg">
+                        <Users size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Employee Directory</h1>
-                        <p className="text-sm text-slate-500">Manage agency staff</p>
+                        <h1 className="text-xl font-bold text-slate-800">Employee Directory</h1>
+                        <p className="text-xs text-slate-500 font-medium">Manage and view your organization's team members</p>
                     </div>
                 </div>
 
                 <button 
                     onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-violet-700 transition shadow-lg shadow-violet-200 active:scale-95"
+                    className="flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-violet-700 transition shadow-sm active:scale-95"
                 >
-                    <Plus size={18} strokeWidth={3} />
+                    <Plus size={18} strokeWidth={2.5} />
                     Add Employee
                 </button>
             </div>
@@ -248,12 +248,12 @@ export default function EmployeesPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => !isSubmitting && setIsAddModalOpen(false)}></div>
                     
-                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
                         {/* Header */}
-                        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 z-20 bg-white">
                             <div>
-                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">New Employee</h2>
-                                <p className="text-sm text-slate-500 font-bold tracking-tight opacity-70">Register a new team member to ASPIRE</p>
+                                <h2 className="text-lg font-bold text-slate-900 tracking-tight">New Employee</h2>
+                                <p className="text-xs text-slate-500 font-medium">Register a new team member to the system</p>
                             </div>
                             <button 
                                 onClick={() => setIsAddModalOpen(false)}
@@ -268,22 +268,22 @@ export default function EmployeesPage() {
                             <form id="add-employee-form" onSubmit={handleAddSubmit} className="space-y-8">
                                 {/* Section 1: Basic Info */}
                                 <div className="space-y-6">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
-                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-violet-600 flex items-center gap-2">
+                                        <div className="w-1 h-3 bg-violet-600 rounded-full"></div>
                                         Basic Information
                                     </h3>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+                                            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Full Name</label>
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">
-                                                    <User size={18} />
+                                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <User size={16} />
                                                 </div>
                                                 <input 
                                                     type="text" 
                                                     required
-                                                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/10 focus:border-violet-600 transition-all font-medium text-slate-900 text-sm"
                                                     placeholder="John Doe"
                                                     value={formData.name}
                                                     onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -463,23 +463,23 @@ export default function EmployeesPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex items-center justify-end gap-4 sticky bottom-0">
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 sticky bottom-0">
                             <button 
                                 type="button"
                                 disabled={isSubmitting}
                                 onClick={() => setIsAddModalOpen(false)}
-                                className="px-6 py-3.5 font-black uppercase tracking-widest text-[10px] text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+                                className="px-5 py-2.5 font-semibold text-xs text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button 
                                 form="add-employee-form"
                                 disabled={isSubmitting}
-                                className="px-10 py-3.5 bg-violet-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+                                className="px-8 py-2.5 bg-violet-600 text-white font-semibold text-xs rounded-xl shadow-sm hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin" />
+                                        <Loader2 size={13} className="animate-spin" />
                                         <span>Saving Profile...</span>
                                     </>
                                 ) : (

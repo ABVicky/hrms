@@ -71,6 +71,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const performAttendanceAction = async (action: 'checkin' | 'checkout', checkinMode: 'office' | 'wfh' = 'wfh', lat?: number, lng?: number, selfie_base64?: string, selfie_mime?: string, selfie_filename?: string) => {
         if (!user) return;
+        
+        const previousStatus = attendanceStatus;
+        // Optimistic Update: Change status immediately for instant UI feedback
+        setAttendanceStatus(action === 'checkin' ? 'checked-in' : 'checked-out');
+
         try {
             const endpoint = action === 'checkin' ? '/checkin' : '/checkout';
             const payload: any = {
@@ -82,10 +87,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (selfie_base64) payload.selfie_base64 = selfie_base64;
             if (selfie_mime) payload.selfie_mime = selfie_mime;
             if (selfie_filename) payload.selfie_filename = selfie_filename;
+            
             const res = await appsScriptFetch(endpoint, payload);
-            await refreshAttendanceStatus();
+            
+            // Sync with server in background to ensure data consistency
+            refreshAttendanceStatus(); 
+            
             return res;
         } catch (err) {
+            // Revert state if the request fails
+            setAttendanceStatus(previousStatus);
             console.error("Attendance action failed", err);
             throw err;
         }

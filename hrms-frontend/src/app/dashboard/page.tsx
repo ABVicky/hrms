@@ -123,11 +123,11 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between px-1 md:px-0">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <GreetingIcon size={18} className={greeting.color} />
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{greeting.text}</span>
+                        <GreetingIcon size={16} className={greeting.color} />
+                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{greeting.text}</span>
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        {user?.name.split(' ')[0]}!
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+                        Welcome back, {user?.name.split(' ')[0]}
                     </h1>
                 </div>
                 <div className="md:hidden">
@@ -139,39 +139,30 @@ export default function DashboardPage() {
 
             {/* Mobile Hero Card: Attendance Quick-glance */}
             <div className="md:hidden">
-                <div className={`relative overflow-hidden rounded-[2.5rem] p-7 shadow-2xl transition-all duration-500 ring-1 ring-white/20 ${
+                <div className={`relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-500 ${
                     attendance_status === 'checked-in' 
-                    ? 'bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-800 shadow-emerald-500/30' 
-                    : 'bg-gradient-to-br from-rose-600 to-pink-700 shadow-rose-200'
+                    ? 'bg-emerald-600 shadow-emerald-100' 
+                    : 'bg-rose-600 shadow-rose-100'
                 }`}>
-                    {/* Decorative Blurs */}
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 scale-150 transition-transform duration-1000 group-hover:scale-110"></div>
-                    <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
-                    
-                    <div className="relative z-10 space-y-6">
+                    <div className="relative z-10 space-y-5">
                         <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.3em] drop-shadow-sm">System Active</p>
+                            <div className="space-y-0.5">
+                                <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">Attendance Status</p>
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] ${attendance_status === 'checked-in' ? 'bg-white animate-pulse' : 'bg-rose-200 opacity-50'}`}></div>
-                                    <h2 className="text-white text-3xl font-black tracking-tight uppercase italic drop-shadow-md">
-                                        {attendance_status === 'checked-in' ? 'Active on Duty' : 'Off Duty'}
+                                    <div className={`w-2 h-2 rounded-full ${attendance_status === 'checked-in' ? 'bg-emerald-300 animate-pulse' : 'bg-rose-300'}`}></div>
+                                    <h2 className="text-white text-2xl font-bold tracking-tight">
+                                        {attendance_status === 'checked-in' ? 'Checked In' : 'Checked Out'}
                                     </h2>
                                 </div>
                             </div>
-                            <div className="p-3.5 bg-white/20 rounded-2xl backdrop-blur-md border border-white/30 shadow-inner">
-                                <Clock className="text-white" size={26} strokeWidth={3} />
+                            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/20">
+                                <Clock className="text-white" size={24} />
                              </div>
                         </div>
 
-                        <Link href="/dashboard/attendance" className="flex items-center justify-between w-full p-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-[1.5rem] font-black text-sm active:scale-[0.98] transition-all group">
-                            <span className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-sm">
-                                    <ArrowRight size={16} />
-                                </div>
-                                {attendance_status === 'checked-in' ? 'Manage Session' : 'Start Check-in'}
-                            </span>
-                            <div className="w-2 h-2 rounded-full bg-white opacity-40 group-hover:opacity-100 transition-opacity"></div>
+                        <Link href="/dashboard/attendance" className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-900 rounded-xl font-bold text-sm active:scale-[0.98] transition-all shadow-sm">
+                            {attendance_status === 'checked-in' ? 'Manage Session' : 'Quick Check-in'}
+                            <ArrowRight size={16} />
                         </Link>
                     </div>
                 </div>
@@ -210,27 +201,27 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-4">
                 <div className="xl:col-span-2 space-y-8">
                     {/* Announcements Section */}
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden premium-card">
-                        <div className="p-5 md:p-7 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-white">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden premium-card">
+                        <div className="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl shadow-sm ring-1 ring-rose-100">
-                                    <Megaphone size={20} />
+                                <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                                    <Megaphone size={18} />
                                 </div>
-                                <h2 className="text-lg md:text-xl font-bold text-slate-800">Announcements</h2>
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-[9px] font-black uppercase tracking-widest text-emerald-600 ring-1 ring-emerald-100">
+                                <h2 className="text-base md:text-lg font-semibold text-slate-800">Announcements</h2>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-[9px] font-bold uppercase tracking-wider text-emerald-600 border border-emerald-100">
                                     <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    Live Sync
+                                    Real-time
                                 </div>
                             </div>
                             {(user?.role === "Super Admin" || user?.role === "HR Admin") && (
-                                <Link href="/dashboard/announcements" className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 group/link">
+                                <Link href="/dashboard/announcements" className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 group/link">
                                     View All
                                     <ChevronRight size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
                                 </Link>
                             )}
                         </div>
-                        <div className="p-5 md:p-7">
-                            <div className="space-y-4 md:space-y-6">
+                        <div className="p-5 md:p-6">
+                            <div className="space-y-4">
                                 {stats?.latest_announcements?.length > 0 ? (
                                     stats.latest_announcements.map((announcement: any) => {
                                         const title = announcement.title?.toLowerCase() || "";
@@ -238,62 +229,52 @@ export default function DashboardPage() {
                                         
                                         // Dynamic Icon Logic
                                         let Icon = Megaphone;
-                                        let gradient = "from-rose-600 to-violet-600";
-                                        let shadow = "shadow-rose-200";
-
+                                        let theme = "bg-slate-50 text-slate-600";
+                                        
                                         if (title.includes("birthday") || message.includes("birthday") || title.includes("celebration")) {
                                             Icon = PartyPopper;
-                                            gradient = "from-rose-500 to-pink-500";
-                                            shadow = "shadow-rose-100";
+                                            theme = "bg-pink-50 text-pink-600";
                                         } else if (title.includes("award") || title.includes("winner") || title.includes("congratulations")) {
                                             Icon = Award;
-                                            gradient = "from-amber-400 to-orange-500";
-                                            shadow = "shadow-amber-100";
+                                            theme = "bg-amber-50 text-amber-600";
                                         } else if (title.includes("holiday") || title.includes("leave") || title.includes("event")) {
                                             Icon = Calendar;
-                                            gradient = "from-emerald-500 to-teal-600";
-                                            shadow = "shadow-emerald-100";
+                                            theme = "bg-emerald-50 text-emerald-600";
                                         } else if (announcement.priority === 'urgent') {
                                             Icon = AlertTriangle;
-                                            gradient = "from-rose-600 to-red-700";
-                                            shadow = "shadow-rose-200";
-                                        } else if (title.includes("policy") || title.includes("update")) {
-                                            Icon = Info;
-                                            gradient = "from-blue-500 to-rose-600";
-                                            shadow = "shadow-blue-100";
+                                            theme = "bg-rose-50 text-rose-600";
                                         }
 
                                         return (
-                                            <div key={announcement.id} className="p-4 md:p-6 rounded-[2rem] border border-slate-100 bg-white/50 hover:bg-white transition-all duration-500 cursor-pointer group clickable shadow-sm hover:shadow-xl hover:shadow-rose-500/5 hover:-translate-y-1">
-                                                <div className="flex gap-5 md:gap-6">
-                                                    <div className={`shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-lg ${shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                                                        <Icon size={28} strokeWidth={2.5} />
+                                            <div key={announcement.id} className="p-5 rounded-xl border border-slate-100 bg-white hover:border-rose-200 transition-all duration-300 group cursor-pointer shadow-sm">
+                                                <div className="flex gap-4">
+                                                    <div className={`shrink-0 w-12 h-12 rounded-xl ${theme} flex items-center justify-center transition-transform group-hover:scale-110`}>
+                                                        <Icon size={24} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-start gap-3">
-                                                            <div className="flex items-center gap-3 flex-wrap">
-                                                                <h3 className="font-extrabold text-slate-900 text-base md:text-xl tracking-tight group-hover:text-rose-600 transition-colors leading-tight">{announcement.title}</h3>
-                                                                <span className={`px-2.5 py-1 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest ring-1 ${
-                                                                    announcement.priority === 'urgent' ? 'bg-rose-50 text-rose-600 ring-rose-100' :
-                                                                    announcement.priority === 'high' ? 'bg-amber-50 text-amber-600 ring-amber-100' :
-                                                                    'bg-slate-50 text-slate-500 ring-slate-100'
-                                                                }`}>
-                                                                    {announcement.priority || 'normal'}
-                                                                </span>
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <h3 className="font-bold text-slate-900 text-sm md:text-base tracking-tight leading-tight">{announcement.title}</h3>
                                                             </div>
+                                                            <span className={`shrink-0 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                                                                announcement.priority === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                                                announcement.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                                'bg-slate-50 text-slate-500 border-slate-100'
+                                                            }`}>
+                                                                {announcement.priority || 'normal'}
+                                                            </span>
                                                         </div>
-                                                        <p className="text-slate-600 mt-2 text-sm md:text-base leading-relaxed font-medium line-clamp-2 md:line-clamp-none opacity-80 group-hover:opacity-100 transition-opacity">{announcement.message}</p>
-                                                        <div className="flex items-center justify-between mt-5 md:mt-6">
-                                                            <div className="flex items-center gap-2 md:gap-3">
-                                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 text-slate-400 font-bold text-[10px] md:text-xs">
+                                                        <p className="text-slate-500 mt-1 text-xs md:text-sm leading-relaxed line-clamp-2">{announcement.message}</p>
+                                                        <div className="flex items-center justify-between mt-4 pb-1">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex items-center gap-1.5 text-slate-400 font-medium text-[10px]">
                                                                     <Clock size={12} />
-                                                                    {new Date(announcement.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    {new Date(announcement.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                                 </div>
-                                                                <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                                                                <p className="text-[10px] md:text-xs font-black text-rose-500 uppercase tracking-widest">{announcement.type || 'Announcement'}</p>
+                                                                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{announcement.type || 'Announcement'}</p>
                                                             </div>
-                                                            <button className="flex items-center gap-1.5 py-1.5 px-4 rounded-xl bg-rose-50 text-rose-600 text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all transform active:scale-95">
-                                                                Read Full <ChevronRight size={14} strokeWidth={3} />
+                                                            <button className="text-rose-600 text-[10px] font-bold uppercase tracking-wider hover:underline">
+                                                                Read More
                                                             </button>
                                                         </div>
                                                     </div>
@@ -454,25 +435,20 @@ export default function DashboardPage() {
 function StatCard({ title, value, icon: Icon, color, bg, iconBg }: any) {
 
     return (
-        <div className={`rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-100 p-4 md:p-8 flex flex-col gap-3 md:gap-7 bg-gradient-to-br ${bg} premium-card group overflow-hidden relative transition-all duration-500 hover:shadow-2xl hover:shadow-rose-500/10 hover:-translate-y-1.5`}>
-            {/* Glossy Overlay/Pattern */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -ml-16 -mb-16 group-hover:scale-150 transition-transform duration-1000 delay-100"></div>
-
+        <div className={`rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6 flex flex-col gap-4 bg-white premium-card group relative transition-all duration-300`}>
             <div className="flex items-center justify-between relative z-10">
-                <div className={`p-3 md:p-5 rounded-xl md:rounded-[1.5rem] ${iconBg} ${color} shadow-lg ring-1 ring-white/50 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 bg-gradient-to-br from-white to-slate-50`}>
-                    <Icon size={20} className="md:size-7" strokeWidth={2.5} />
+                <div className={`p-2.5 rounded-lg ${iconBg} ${color} border border-slate-50 shadow-sm transition-transform group-hover:scale-110`}>
+                    <Icon size={20} />
                 </div>
             </div>
 
             <div className="relative z-10">
-                <p className="text-[8px] md:text-xs font-black text-slate-400 mb-1 md:mb-2 uppercase tracking-[0.2em]">{title}</p>
-                <p className="text-2xl md:text-5xl font-black text-slate-900 tracking-tighter group-hover:text-rose-600 transition-colors duration-500">{value}</p>
+                <p className="text-[10px] font-bold text-slate-400 mb-0.5 uppercase tracking-wider">{title}</p>
+                <p className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight group-hover:text-rose-600 transition-colors">{value}</p>
             </div>
             
-            {/* Visual Progress Bar (Subtle) */}
-            <div className="h-1 md:h-1.5 w-full bg-slate-100/50 rounded-full overflow-hidden mt-0.5 md:mt-1 relative z-10">
-                <div className={`h-full bg-gradient-to-r from-rose-500 to-violet-500 rounded-full w-[70%] group-hover:w-[75%] transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.3)]`}></div>
+            <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden mt-1 relative z-10">
+                <div className={`h-full bg-rose-500/20 rounded-full w-[60%] group-hover:w-[65%] transition-all duration-500`}></div>
             </div>
         </div>
     );

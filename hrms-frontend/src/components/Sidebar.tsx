@@ -88,22 +88,21 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             )}
 
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-slate-300 transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow-2xl`}>
-                <div className="flex items-center justify-between px-6 h-24 border-b border-slate-900">
+            <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-slate-300 transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} shadow-xl`}>
+                <div className="flex items-center justify-between px-6 h-20 border-b border-slate-900/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                        <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm">
                             <img 
                                 src="/logo.png" 
                                 alt="ASPIRE Logo" 
-                                className="w-7 h-7 object-contain"
+                                className="w-6 h-6 object-contain"
                             />
                         </div>
-                        <span className="font-black text-xl tracking-tight text-white uppercase">ASPIRE<span className="text-rose-500">.</span></span>
+                        <span className="font-bold text-lg tracking-tight text-white uppercase">ASPIRE<span className="text-rose-500">.</span></span>
                     </div>
-
                 </div>
 
-                <nav className="flex-1 px-5 py-10 space-y-2.5 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto custom-scrollbar">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
@@ -112,14 +111,16 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setIsOpen(false)}
-                                className={`flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all duration-500 group relative overflow-hidden ${isActive
-                                    ? "bg-gradient-to-br from-rose-600 to-pink-600 text-white shadow-[0_10px_30px_rgba(225,29,72,0.3)] font-extrabold translate-x-2"
-                                    : "hover:bg-slate-900/50 hover:text-white font-bold text-slate-400 hover:translate-x-1"
+                                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${isActive
+                                    ? "bg-rose-600 text-white shadow-lg shadow-rose-900/20 font-semibold"
+                                    : "hover:bg-white/5 hover:text-white font-medium text-slate-400"
                                     }`}
                             >
-                                {isActive && <div className="absolute left-0 top-0 w-1.5 h-full bg-white rounded-r-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>}
-                                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-white" : "text-slate-600 group-hover:text-rose-400 transition-colors"} />
-                                <span className="tracking-tight">{item.name}</span>
+                                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-white" : "text-slate-500 group-hover:text-rose-400 transition-colors"} />
+                                <span className="tracking-tight text-[15px]">{item.name}</span>
+                                {isActive && (
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-l-full shadow-[0_0_8px_rgba(255,255,255,0.4)]"></div>
+                                )}
                             </Link>
                         );
                     })}
@@ -144,17 +145,14 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                         <span>{isInstallable ? "Install App" : swUpdateAvailable ? "Update to Latest" : "Check for Updates"}</span>
                     </button>
 
-                    <div className="bg-gradient-to-br from-slate-900 to-black p-4 rounded-[2rem] border border-slate-800 shadow-2xl relative overflow-hidden group transition-all duration-500 hover:border-rose-500/30">
-                        {/* Soft Glow */}
-                        <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl group-hover:bg-rose-500/20 transition-all duration-700"></div>
-                        
+                    <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group transition-all duration-300 hover:border-rose-500/20">
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative shrink-0">
                                 {user.profile_picture ? (
                                     <img 
                                         src={getImageUrl(user.profile_picture)} 
                                         alt="" 
-                                        className="absolute inset-0 w-11 h-11 rounded-xl object-cover ring-2 ring-slate-800 shadow-xl z-10 transition-all duration-500 group-hover:scale-105"
+                                        className="absolute inset-0 w-10 h-10 rounded-lg object-cover ring-1 ring-white/10 shadow-lg z-10 transition-all duration-300"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).style.opacity = '0';
                                         }}
@@ -163,22 +161,18 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                         }}
                                     />
                                 ) : null}
-                                <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-slate-700">
-                                    <User size={20} strokeWidth={2.5} />
+                                <div className="w-10 h-10 rounded-lg bg-slate-800 text-slate-500 flex items-center justify-center ring-1 ring-white/5">
+                                    <User size={18} />
                                 </div>
-                                <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 border-[3px] border-slate-950 rounded-full shadow-lg z-20 transition-all duration-700 ${
-                                    attendanceStatus === 'checked-in' ? 'bg-emerald-500 shadow-emerald-500/20' : 
-                                    attendanceStatus === 'checked-out' ? 'bg-rose-500 shadow-rose-500/20' : 
+                                <div className={`absolute -top-0.5 -right-0.5 w-3 h-3 border-2 border-slate-950 rounded-full z-20 ${
+                                    attendanceStatus === 'checked-in' ? 'bg-emerald-500' : 
+                                    attendanceStatus === 'checked-out' ? 'bg-rose-500' : 
                                     'bg-slate-600'
                                 }`}></div>
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-rose-300 transition-colors">{user.name}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
-                                        {user.role}
-                                    </span>
-                                </div>
+                                <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+                                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{user.role}</p>
                             </div>
                         </div>
                     </div>

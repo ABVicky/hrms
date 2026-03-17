@@ -26,7 +26,7 @@ function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2
 }
 
 export default function AttendancePage() {
-    const { user, performAttendanceAction } = useAuth();
+    const { user, performAttendanceAction, attendanceStatus } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
@@ -78,7 +78,8 @@ export default function AttendancePage() {
             return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
         })[0];
 
-    const isActiveSession = !!openSession;
+    // We've moved the primary session state to rely on attendanceStatus for optimistic speed
+    const isActiveSession = attendanceStatus === 'checked-in';
 
     async function loadAttendance() {
         try {
@@ -220,14 +221,28 @@ export default function AttendancePage() {
                 }
 
                 try {
+                    // Optimistic UI: Add a temporary record so the timer and button update instantly
+                    const optimisticCheckin = {
+                        attendance_id: 'temp-' + Date.now(),
+                        date: todayStr,
+                        mode: 'office',
+                        check_in: new Date().toISOString(),
+                        check_out: null,
+                        working_hours: '0.00'
+                    };
+                    setAttendanceRecords(prev => [...(prev || []), optimisticCheckin]);
+
                     const res = await performAttendanceAction('checkin', 'office', position.coords.latitude, position.coords.longitude);
                     if (!res) throw new Error("No response from server");
                     playAttendanceSound('checkin');
                     setMessage({ type: 'success', text: res.status || 'Checked in successfully!' });
                     setTimeout(() => setMessage(null), 5000);
+                    // loadAttendance will replace the optimistic record with real data
                     await loadAttendance();
                 } catch (err: any) {
                     setMessage({ type: 'error', text: err.message });
+                    // Revert optimistic record on error
+                    await loadAttendance();
                 } finally {
                     setLoading(false);
                 }
@@ -246,6 +261,17 @@ export default function AttendancePage() {
         setShowCamera(false);
         setMessage(null);
         try {
+            // Optimistic UI update
+            const optimisticCheckin = {
+                attendance_id: 'temp-' + Date.now(),
+                date: todayStr,
+                mode: 'wfh',
+                check_in: new Date().toISOString(),
+                check_out: null,
+                working_hours: '0.00'
+            };
+            setAttendanceRecords(prev => [...(prev || []), optimisticCheckin]);
+
             const mime = capturedImage.split(';')[0].split(':')[1];
             const filename = `wfh_${user?.employee_id}_${Date.now()}.jpg`;
             const res = await performAttendanceAction(
@@ -260,6 +286,7 @@ export default function AttendancePage() {
             await loadAttendance();
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
+            await loadAttendance();
         } finally {
             setLoading(false);
         }
@@ -270,6 +297,15 @@ export default function AttendancePage() {
         setLoading(true);
         setMessage(null);
         try {
+            // Optimistic UI: Update current record to show checkout
+            if (openSession) {
+                setAttendanceRecords(prev => prev.map(r => 
+                    r.attendance_id === openSession.attendance_id 
+                    ? { ...r, check_out: new Date().toISOString() } 
+                    : r
+                ));
+            }
+
             const res = await performAttendanceAction('checkout', todayRecord?.mode);
             if (!res) throw new Error("No response from server");
             playAttendanceSound('checkout');
@@ -278,6 +314,7 @@ export default function AttendancePage() {
             await loadAttendance();
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
+            await loadAttendance();
         } finally {
             setLoading(false);
         }
@@ -371,11 +408,11 @@ export default function AttendancePage() {
             )}
 
             {/* Main Content Page - page-transition div is SEPARATE from modals */}
-            <div className="space-y-4 md:space-y-8 max-w-5xl mx-auto page-transition pb-10">
+            <div className="space-y-6 md:space-y-8 max-w-5xl mx-auto page-transition pb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Attendance</h1>
-                        <p className="text-slate-500 font-medium">Manage your daily work session.</p>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Attendance</h1>
+                        <p className="text-sm text-slate-500 font-medium">Manage your daily work sessions</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/dashboard/attendance/analytics" className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-bold text-sm hover:bg-rose-600 hover:text-white transition-all shadow-sm">
@@ -397,53 +434,53 @@ export default function AttendancePage() {
                     </div>
                 )}
 
-                <div className="bg-white p-6 md:p-12 rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 premium-card text-center">
+                <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-100 premium-card text-center">
                     <div className="max-w-md mx-auto space-y-10">
                         {!isActiveSession && !todayRecord?.check_out && (
-                            <div className="flex bg-slate-100 p-1.5 rounded-2xl items-center relative z-0">
-                                <button onClick={() => setMode('office')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === 'office' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500'}`}><MapPin size={16} /> Office</button>
-                                <button onClick={() => setMode('wfh')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === 'wfh' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500'}`}><Home size={16} /> WFH</button>
+                            <div className="flex bg-slate-100 p-1 rounded-xl items-center relative z-0">
+                                <button onClick={() => setMode('office')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'office' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500'}`}><MapPin size={16} /> Office</button>
+                                <button onClick={() => setMode('wfh')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'wfh' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500'}`}><Home size={16} /> WFH</button>
                             </div>
                         )}
                         <div className="flex flex-col items-center">
                             <div className="relative mb-8">
-                                {isActiveSession && <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping scale-150 opacity-20"></div>}
+                                {isActiveSession && <div className="absolute inset-0 bg-emerald-500/10 rounded-full animate-ping scale-150"></div>}
                                 <button onClick={handleToggle} disabled={loading || (!!todayRecord?.check_in && !!todayRecord?.check_out)}
-                                    className={`relative z-10 w-44 h-44 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl active:scale-95 border-8 ${isActiveSession ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-100 shadow-amber-200' : !!todayRecord?.check_out ? 'bg-slate-100 text-slate-400 border-slate-50' : mode === 'wfh' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-100 shadow-cyan-200' : 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-100 shadow-emerald-200'}`}>
-                                    {loading ? <Loader2 className="animate-spin w-10 h-10" /> : (
+                                    className={`relative z-10 w-40 h-40 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-xl active:scale-95 border-4 ${isActiveSession ? 'bg-amber-500 hover:bg-amber-600 text-white border-white/20' : !!todayRecord?.check_out ? 'bg-slate-100 text-slate-400 border-slate-200' : mode === 'wfh' ? 'bg-cyan-600 hover:bg-cyan-700 text-white border-white/20' : 'bg-emerald-600 hover:bg-emerald-700 text-white border-white/20'}`}>
+                                    {loading ? <Loader2 className="animate-spin w-8 h-8" /> : (
                                         <>
-                                            {isActiveSession ? <Power size={48} strokeWidth={2.5} className="mb-2" /> : !!todayRecord?.check_out ? <Power size={48} strokeWidth={2.5} className="mb-2" /> : mode === 'wfh' ? <Camera size={40} className="mb-2" /> : <Power size={48} className="mb-2" />}
-                                            <span className="text-xs font-black uppercase tracking-widest">{isActiveSession ? 'Check Out' : !!todayRecord?.check_out ? 'Session Over' : mode === 'wfh' ? 'WFH Check In' : 'Check In'}</span>
+                                            {isActiveSession ? <Power size={40} className="mb-2" /> : !!todayRecord?.check_out ? <CheckCircle2 size={40} className="mb-2" /> : mode === 'wfh' ? <Camera size={36} className="mb-2" /> : <Power size={40} className="mb-2" />}
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">{isActiveSession ? 'Check Out' : !!todayRecord?.check_out ? 'Completed' : mode === 'wfh' ? 'WFH In' : 'Check In'}</span>
                                         </>
                                     )}
                                 </button>
                             </div>
-                            <div className="space-y-2">
-                                {isActiveSession ? <ActiveTimer checkInTime={todayRecord.check_in} /> : <h2 className="text-4xl font-black tracking-tighter tabular-nums text-slate-300">00:00:00</h2>}
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Duration</p>
+                            <div className="space-y-1">
+                                {isActiveSession ? <ActiveTimer checkInTime={todayRecord.check_in} /> : <h2 className="text-3xl font-bold tracking-tight text-slate-300">00:00:00</h2>}
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</p>
                             </div>
                         </div>
                         {todayRecord?.check_in && (
-                            <div className="grid grid-cols-2 gap-4 pt-8 border-t border-slate-100 text-sm">
-                                <div className="text-left"><p className="text-[10px] font-black uppercase text-slate-400">In At</p><p className="font-bold text-slate-900">{new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
-                                <div className="text-right"><p className="text-[10px] font-black uppercase text-slate-400">Mode</p><p className="font-bold text-slate-900 capitalize">{todayRecord.mode}</p></div>
+                            <div className="grid grid-cols-2 gap-4 pt-8 border-t border-slate-50 text-xs">
+                                <div className="text-left"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">In Time</p><p className="font-semibold text-slate-900">{new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
+                                <div className="text-right"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Mode</p><p className="font-semibold text-emerald-600 capitalize">{todayRecord.mode}</p></div>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden premium-card">
-                    <div className="p-6 md:p-10 border-b border-slate-100 flex items-center justify-between"><h2 className="text-xl font-black text-slate-900 tracking-tight">Recent History</h2></div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden premium-card">
+                    <div className="p-5 md:p-8 border-b border-slate-100 flex items-center justify-between"><h2 className="text-base font-bold text-slate-900 uppercase tracking-wider">Recent History</h2></div>
                     {/* Desktop View Table */}
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-50/50 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                            <thead className="bg-slate-50/50 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                                 <tr className="border-b border-slate-50">
-                                    <th className="px-10 py-6">Date</th>
-                                    <th className="px-10 py-6">Mode</th>
-                                    <th className="px-10 py-6">In</th>
-                                    <th className="px-10 py-6">Out</th>
-                                    <th className="px-10 py-6 text-right">Hours</th>
+                                    <th className="px-8 py-4">Date</th>
+                                    <th className="px-8 py-4">Mode</th>
+                                    <th className="px-8 py-4">In</th>
+                                    <th className="px-8 py-4">Out</th>
+                                    <th className="px-8 py-4 text-right">Hours</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">

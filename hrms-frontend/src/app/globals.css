@@ -5,8 +5,10 @@
   --foreground: #0f172a;
   --primary: #e11d48;
   --primary-hover: #be185d;
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
 }
 
 @theme {
@@ -22,10 +24,10 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior: none; /* Prevents pull-to-refresh and bounce on mobile */
+  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   height: 100%;
-  overflow: hidden; /* Body is fixed; only inner containers scroll */
+  overflow: hidden;
 }
 
 html {
@@ -56,15 +58,15 @@ main, .scroll-container {
 
 /* Native-like active scale effect for buttons */
 button:active, .clickable:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
   transition: transform 0.1s ease;
 }
 
 /* Glassmorphism utility */
 .glass-effect {
   background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
 }
 
@@ -72,7 +74,7 @@ button:active, .clickable:active {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(4px);
   }
 
   to {
@@ -82,7 +84,7 @@ button:active, .clickable:active {
 }
 
 .page-transition {
-  animation: fadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* Custom Scrollbar */
@@ -103,14 +105,14 @@ button:active, .clickable:active {
   background: #cbd5e1;
 }
 
-/* Premium Card Hover */
+/* Professional Card Hover */
 .premium-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .premium-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
 }
 
 /* Mobile Touch Target Fixes */
