@@ -526,7 +526,7 @@ export default function AnalyticsPage() {
                         </p>
                         <div className="space-y-2 opacity-80">
                             <p>1. Check if <span className="text-white">NEXT_PUBLIC_APPS_SCRIPT_URL</span> is correctly set in your Netlify Environment Variables.</p>
-                            <p>2. Ensure you have clicked <span className="text-white">"Deploy > New Deployment"</span> in Google Apps Script and used the NEW URL.</p>
+                            <p>2. Ensure you have clicked <span className="text-white">"Deploy &gt; New Deployment"</span> in Google Apps Script and used the NEW URL.</p>
                             <p>3. Verify that your <span className="text-white">employees</span> sheet has active users (status != 'inactive').</p>
                         </div>
                     </div>
