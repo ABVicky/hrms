@@ -141,26 +141,26 @@ export default function DashboardPage() {
             <div className="md:hidden">
                 <div className={`relative overflow-hidden rounded-[2.5rem] p-7 shadow-2xl transition-all duration-500 ring-1 ring-white/20 ${
                     attendance_status === 'checked-in' 
-                    ? 'bg-gradient-to-br from-emerald-500 to-teal-700 shadow-emerald-200' 
+                    ? 'bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-800 shadow-emerald-500/30' 
                     : 'bg-gradient-to-br from-rose-600 to-pink-700 shadow-rose-200'
                 }`}>
                     {/* Decorative Blurs */}
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 scale-150 transition-transform duration-1000 group-hover:scale-110"></div>
                     <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
                     
                     <div className="relative z-10 space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em]">Live Status</p>
+                                <p className="text-white/80 text-[10px] font-black uppercase tracking-[0.3em] drop-shadow-sm">System Active</p>
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full animate-pulse ${attendance_status === 'checked-in' ? 'bg-white' : 'bg-rose-200'}`}></div>
-                                    <h2 className="text-white text-2xl font-black tracking-tight uppercase italic">
-                                        {attendance_status === 'checked-in' ? 'On Duty' : 'Off Duty'}
+                                    <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] ${attendance_status === 'checked-in' ? 'bg-white animate-pulse' : 'bg-rose-200 opacity-50'}`}></div>
+                                    <h2 className="text-white text-3xl font-black tracking-tight uppercase italic drop-shadow-md">
+                                        {attendance_status === 'checked-in' ? 'Active on Duty' : 'Off Duty'}
                                     </h2>
                                 </div>
                             </div>
-                            <div className="p-3 bg-white/20 rounded-[1.25rem] backdrop-blur-md border border-white/20">
-                                <Clock className="text-white" size={24} strokeWidth={2.5} />
+                            <div className="p-3.5 bg-white/20 rounded-2xl backdrop-blur-md border border-white/30 shadow-inner">
+                                <Clock className="text-white" size={26} strokeWidth={3} />
                              </div>
                         </div>
 
