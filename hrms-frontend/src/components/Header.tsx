@@ -21,7 +21,7 @@ export default function Header() {
                 const data = await appsScriptFetch("/get-notifications", { 
                     employee_id: user.employee_id,
                     department: user.department,
-                    role: user.role
+                    role: user.role?.toLowerCase()
                 });
                 if (data) setNotifications(data);
             } catch (error) {
