@@ -500,38 +500,7 @@ export default function AnalyticsPage() {
             )}
 
 
-            {/* Diagnostic Info (For production debugging) */}
-            <div className="mt-12 p-6 bg-slate-900 rounded-[2.5rem] border border-slate-800 text-slate-400 font-mono text-[10px] space-y-2">
-                <div className="flex items-center justify-between">
-                    <p className="text-slate-500 uppercase tracking-widest text-[9px] font-black flex items-center gap-2">
-                        <Loader2 size={12} className={loading ? "animate-spin" : ""} />
-                        System Diagnostic Mode
-                    </p>
-                    <span className="text-[8px] bg-slate-800 px-2 py-0.5 rounded text-slate-500">v{data.length > 0 ? 'connected' : 'syncing'}</span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 bg-black/20 p-4 rounded-2xl border border-white/5">
-                    <p>USER_ID: <span className="text-white">{user?.employee_id}</span></p>
-                    <p>ROLE: <span className="text-rose-400 font-bold uppercase">{user?.role}</span></p>
-                    <p>DATA_COUNT: <span className="text-emerald-400 font-bold">{data.length}</span></p>
-                    <p>FILTERED: <span className="text-emerald-400 font-bold">{filtered.length}</span></p>
-                    <p className="md:col-span-2">API_ENDPOINT: <span className="text-blue-400 break-all">{process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || 'NOT_DEFINED'}</span></p>
-                </div>
 
-                {data.length === 0 && !loading && (
-                    <div className="mt-4 p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400">
-                        <p className="font-bold mb-2 flex items-center gap-2">
-                            <AlertTriangle size={14} /> 
-                            CRITICAL: Live Data Discrepancy Detected
-                        </p>
-                        <div className="space-y-2 opacity-80">
-                            <p>1. Check if <span className="text-white">NEXT_PUBLIC_APPS_SCRIPT_URL</span> is correctly set in your Netlify Environment Variables.</p>
-                            <p>2. Ensure you have clicked <span className="text-white">"Deploy &gt; New Deployment"</span> in Google Apps Script and used the NEW URL.</p>
-                            <p>3. Verify that your <span className="text-white">employees</span> sheet has active users (status != 'inactive').</p>
-                        </div>
-                    </div>
-                )}
-            </div>
             </div>
         </>
     );
