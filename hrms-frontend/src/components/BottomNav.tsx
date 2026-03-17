@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, MapPin, CalendarOff, IndianRupee, Menu } from "lucide-react";
+import { LayoutDashboard, MapPin, CalendarOff, IndianRupee, Menu, BarChart2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function BottomNav({ setIsSidebarOpen }: { setIsSidebarOpen: (val: boolean) => void }) {
@@ -12,7 +12,11 @@ export default function BottomNav({ setIsSidebarOpen }: { setIsSidebarOpen: (val
 
     const navItems = [
         { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-        { name: "Attendance", href: user?.role === "Super Admin" ? "/dashboard/attendance/analytics" : "/dashboard/attendance", icon: MapPin },
+        { 
+            name: user?.role === "Super Admin" ? "Analytics" : "Attendance", 
+            href: user?.role === "Super Admin" ? "/dashboard/analytics" : "/dashboard/attendance", 
+            icon: user?.role === "Super Admin" ? BarChart2 : MapPin 
+        },
         { name: "Leaves", href: "/dashboard/leaves", icon: CalendarOff },
         { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee },
     ];
