@@ -395,9 +395,10 @@ export default function AnalyticsPage() {
     };
 
     useEffect(() => {
-        const ANALYTICS_ROLES = ["super admin", "hr admin", "admin"];
+        const ANALYTICS_ROLES = ["super admin", "hr admin", "admin", "ceo", "manager"];
         const userRole = user?.role?.toLowerCase() || "";
         if (user && !ANALYTICS_ROLES.includes(userRole)) {
+            console.error("Access denied for role:", userRole);
             window.location.href = "/dashboard";
             return;
         }
@@ -406,10 +407,11 @@ export default function AnalyticsPage() {
         return () => clearInterval(interval);
     }, [user]);
 
-    const filtered = data.filter(e =>
-        e.name?.toLowerCase().includes(search.toLowerCase()) ||
-        e.department?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = data.filter(e => {
+        if (!e) return false;
+        return (e.name?.toLowerCase().includes(search.toLowerCase()) ||
+                e.department?.toLowerCase().includes(search.toLowerCase()));
+    });
 
     return (
         <>
