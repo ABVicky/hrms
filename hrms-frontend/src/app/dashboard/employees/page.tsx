@@ -11,6 +11,8 @@ export default function EmployeesPage() {
     const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -71,6 +73,52 @@ export default function EmployeesPage() {
             loadEmployees();
         } catch (error: any) {
             setMessage({ type: 'error', text: error.message || 'Failed to add employee' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleEditClick = (emp: any) => {
+        setEditingEmployee(emp);
+        setFormData({
+            name: emp.name || '',
+            email: emp.email || '',
+            phone: emp.phone || '',
+            department: emp.department || 'Development',
+            role: emp.role || 'Employee',
+            salary: emp.salary || '',
+            employee_type: emp.employee_type || 'Full-time',
+            manager_id: emp.manager_id || '',
+            joining_date: emp.joining_date || '',
+            password: '' 
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setMessage(null);
+
+        try {
+            const updates: any = { ...formData, employee_id: editingEmployee.employee_id };
+            if (!formData.password) delete updates.password;
+
+            await appsScriptFetch("/employee-update", updates);
+            
+            if (formData.password) {
+                await appsScriptFetch("/update-password", {
+                    employee_id: editingEmployee.employee_id,
+                    new_password: formData.password,
+                    is_admin_reset: true
+                });
+            }
+
+            setMessage({ type: 'success', text: 'Employee updated successfully!' });
+            setIsEditModalOpen(false);
+            loadEmployees();
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.message || 'Failed to update employee' });
         } finally {
             setIsSubmitting(false);
         }
@@ -172,7 +220,12 @@ export default function EmployeesPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <button className="text-sm text-rose-600 hover:text-rose-800 font-medium">Edit</button>
+                                            <button 
+                                                onClick={() => handleEditClick(emp)}
+                                                className="text-sm text-violet-600 hover:text-violet-800 font-bold transition-all active:scale-95 px-3 py-1 bg-violet-50 rounded-lg"
+                                            >
+                                                Edit
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -369,7 +422,7 @@ export default function EmployeesPage() {
                                                     onChange={(e) => setFormData({...formData, manager_id: e.target.value})}
                                                 >
                                                     <option value="">No Manager (Self)</option>
-                                                    {employees.filter(e => e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin').map(manager => (
+                                                    {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin')).map(manager => (
                                                         <option key={manager.employee_id} value={manager.employee_id}>
                                                             {manager.name} ({manager.role})
                                                         </option>
@@ -431,6 +484,200 @@ export default function EmployeesPage() {
                                     </>
                                 ) : (
                                     <span>Register Employee</span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Employee Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => !isSubmitting && setIsEditModalOpen(false)}></div>
+                    
+                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                        {/* Header */}
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-20">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Edit Profile</h2>
+                                <p className="text-sm text-slate-500 font-bold tracking-tight opacity-70">Updating details for {editingEmployee?.name}</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="p-2.5 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Form Body */}
+                        <div className="overflow-y-auto flex-1 p-8 space-y-8 custom-scrollbar">
+                            <form id="edit-employee-form" onSubmit={handleUpdateSubmit} className="space-y-8">
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                        Core Information
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+                                            <input 
+                                                type="text" 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
+                                            <input 
+                                                type="email" 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
+                                            <input 
+                                                type="tel" 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Joining Date</label>
+                                            <input 
+                                                type="date" 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.joining_date}
+                                                onChange={(e) => setFormData({...formData, joining_date: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-violet-600 rounded-full"></div>
+                                        Organization Details
+                                    </h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Department</label>
+                                            <select 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.department}
+                                                onChange={(e) => setFormData({...formData, department: e.target.value})}
+                                            >
+                                                <option value="Development">Development</option>
+                                                <option value="Design">Design</option>
+                                                <option value="Marketing">Marketing</option>
+                                                <option value="HR">Human Resources</option>
+                                                <option value="Finance">Finance</option>
+                                                <option value="Operations">Operations</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Role / Position</label>
+                                            <select 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.role}
+                                                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                            >
+                                                <option value="Employee">Employee</option>
+                                                <option value="Manager">Manager</option>
+                                                <option value="HR Admin">HR Admin</option>
+                                                <option value="Finance">Finance</option>
+                                                <option value="Super Admin">Super Admin</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Salary (Monthly)</label>
+                                            <input 
+                                                type="number" 
+                                                required
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.salary}
+                                                onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Reporting Manager</label>
+                                            <select 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.manager_id}
+                                                onChange={(e) => setFormData({...formData, manager_id: e.target.value})}
+                                            >
+                                                <option value="">No Manager (Self)</option>
+                                                {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin')).map(manager => (
+                                                    <option key={manager.employee_id} value={manager.employee_id}>
+                                                        {manager.name} ({manager.role})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-rose-600 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-rose-600 rounded-full"></div>
+                                        Security Reset
+                                    </h3>
+                                    
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Force New Password (Optional)</label>
+                                        <input 
+                                            type="password" 
+                                            className="w-full px-5 py-4 bg-rose-50/30 border border-rose-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-500/5 focus:border-rose-600 transition-all font-bold text-slate-900"
+                                            placeholder="Leave empty to keep current"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                        />
+                                        <p className="text-[10px] font-bold text-slate-400 ml-1">Changing this will immediately overwrite the employee's password.</p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 sticky bottom-0">
+                            <button 
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="px-6 py-3.5 font-black uppercase tracking-widest text-[10px] text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                form="edit-employee-form"
+                                disabled={isSubmitting}
+                                className="px-10 py-3.5 bg-violet-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Applying...</span>
+                                    </>
+                                ) : (
+                                    <span>Sync Changes</span>
                                 )}
                             </button>
                         </div>

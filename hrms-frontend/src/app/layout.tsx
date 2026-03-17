@@ -38,6 +38,8 @@ export const viewport = {
   viewportFit: "cover",
 };
 
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +52,7 @@ export default function RootLayout({
           <PWAProvider>
             <NotificationManager />
             <PWAHandler />
+            <PWAUpdatePrompt />
             <InstallPrompt />
             {children}
           </PWAProvider>
