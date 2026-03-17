@@ -75,11 +75,12 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
                 reg.update();
                 checkVersionMismatch();
 
-                // Check for updates periodically
+                // Check for updates periodically (more frequent for sync)
                 const interval = setInterval(() => {
+                    console.log("[PWA] Running periodic update check...");
                     reg.update();
                     checkVersionMismatch();
-                }, 60 * 60 * 1000); // Hourly check
+                }, 5 * 60 * 1000); // 5 minutes check
 
                 // Aggressive check on window focus or visibility change
                 const handleUpdateCheck = () => {

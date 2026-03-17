@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { usePWA } from "@/contexts/PWAContext";
 import { getImageUrl } from "@/lib/utils";
+import { APP_VERSION } from "@/constants/version";
 
 export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: boolean) => void }) {
     const pathname = usePathname();
@@ -177,6 +178,10 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    {/* Version Indicator */}
+                    <div className="text-center px-4">
+                        <span className="text-[10px] text-slate-700 font-medium uppercase tracking-widest">Version {APP_VERSION}</span>
                     </div>
                 </div>
             </div>

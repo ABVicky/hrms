@@ -5,6 +5,7 @@ const withPWA = withPWAInit({
     disable: process.env.NODE_ENV === "development",
     register: true,
     skipWaiting: false,
+    sw: "sw.js",
     workboxOptions: {
         skipWaiting: false,
         clientsClaim: true,
