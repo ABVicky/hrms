@@ -153,6 +153,9 @@ function handleRequest(e, method) {
       case '/employee-add':
         result = handleAddEmployee(params);
         break;
+      case '/employee-update':
+        result = handleUpdateEmployee(params);
+        break;
 
       default:
         throw new Error('[v' + VERSION + '] Unknown endpoint requested: "' + endpoint + '"');
@@ -541,20 +544,15 @@ function handleUpdateProfile(params) {
   }
 
   updateRowInSheet('employees', 'employee_id', employee_id, updates);
+  clearCache(employee_id);
   
   return { status: 'Profile updated successfully', ...updates };
 }
 
 function handleUpdatePassword(params) {
-  const { employee_id, current_password, new_password } = params;
-  if (!employee_id || !current_password || !new_password) throw new Error("Missing parameters");
+  const { employee_id, current_password, new_password, is_admin_reset } = params;
+  if (!employee_id || !new_password) throw new Error("Missing parameters");
   
-  const employees = getSheetData('employees');
-  const user = employees.find(e => e.employee_id == employee_id);
-  
-  if (!user) throw new Error("Employee not found");
-  
-  // Find the row manually to check the password (since getSheetData strips it in some cases, but here we read it directly from sheet data)
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('employees');
   const data = sheet.getDataRange().getValues();
@@ -564,8 +562,11 @@ function handleUpdatePassword(params) {
   
   let found = false;
   for (let i = 1; i < data.length; i++) {
-    if (data[i][idCol] == employee_id) {
-      if (data[i][passCol] !== current_password) throw new Error("Current password is incorrect");
+    if (String(data[i][idCol]) === String(employee_id)) {
+      // If not an admin reset, we must verify the current password
+      if (!is_admin_reset && data[i][passCol] !== current_password) {
+        throw new Error("Current password is incorrect");
+      }
       
       sheet.getRange(i + 1, passCol + 1).setValue(new_password);
       found = true;
@@ -574,8 +575,18 @@ function handleUpdatePassword(params) {
   }
   
   if (!found) throw new Error("Employee record not found");
-  
+  clearCache(employee_id);
   return { success: true };
+}
+
+function handleUpdateEmployee(params) {
+  const { employee_id, ...updates } = params;
+  if (!employee_id) throw new Error("Employee ID required");
+  
+  updateRowInSheet('employees', 'employee_id', employee_id, updates);
+  clearCache(employee_id);
+  
+  return { status: 'Employee updated successfully', ...updates };
 }
 
 function getAttendance(params) {
