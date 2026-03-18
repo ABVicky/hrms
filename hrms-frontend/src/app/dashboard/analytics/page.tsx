@@ -448,9 +448,9 @@ export default function AnalyticsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
                             { label: 'Total Employees', value: data.length, icon: Users, color: 'rose' },
-                            { label: 'Present Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0])).length, icon: CheckCircle2, color: 'emerald' },
-                            { label: 'Late This Week', value: data.reduce((s, e) => s + e.stats_7.total_late, 0), icon: AlertTriangle, color: 'amber' },
-                            { label: 'WFH Today', value: data.filter(e => e.seven_day_data.some(d => d.date === new Date().toISOString().split('T')[0] && d.mode === 'wfh')).length, icon: Home, color: 'cyan' },
+                            { label: 'Present Today', value: data.filter(e => e?.seven_day_data?.some((d: any) => d.date === new Date().toISOString().split('T')[0])).length, icon: CheckCircle2, color: 'emerald' },
+                            { label: 'Late This Week', value: data.reduce((s, e) => s + (e?.stats_7?.total_late || 0), 0), icon: AlertTriangle, color: 'amber' },
+                            { label: 'WFH Today', value: data.filter(e => e?.seven_day_data?.some((d: any) => d.date === new Date().toISOString().split('T')[0] && d.mode === 'wfh')).length, icon: Home, color: 'cyan' },
                         ].map(stat => {
                             const Icon = stat.icon;
                             const cmap: Record<string, string> = { rose: 'bg-rose-600', emerald: 'bg-emerald-500', amber: 'bg-amber-500', cyan: 'bg-cyan-500' };

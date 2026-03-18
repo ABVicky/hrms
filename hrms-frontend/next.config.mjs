@@ -10,6 +10,7 @@ const withPWA = withPWAInit({
         skipWaiting: false,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        exclude: [/^\/_headers$/],
     },
     reloadOnOnline: true,
 });

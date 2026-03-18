@@ -272,7 +272,7 @@ export default function AttendancePage() {
             };
             setAttendanceRecords(prev => [...(prev || []), optimisticCheckin]);
 
-            const mime = capturedImage.split(';')[0].split(':')[1];
+            const mime = (capturedImage || "").split(';')[0]?.split(':')[1] || "image/jpeg";
             const filename = `wfh_${user?.employee_id}_${Date.now()}.jpg`;
             const res = await performAttendanceAction(
                 'checkin', 'wfh',
@@ -306,7 +306,7 @@ export default function AttendancePage() {
                 ));
             }
 
-            const res = await performAttendanceAction('checkout', todayRecord?.mode);
+            const res = await performAttendanceAction('checkout', todayRecord?.mode || 'office');
             if (!res) throw new Error("No response from server");
             playAttendanceSound('checkout');
             setMessage({ type: 'success', text: res.status || 'Checked out successfully!' });
@@ -456,14 +456,14 @@ export default function AttendancePage() {
                                 </button>
                             </div>
                             <div className="space-y-1">
-                                {isActiveSession ? <ActiveTimer checkInTime={todayRecord.check_in} /> : <h2 className="text-3xl font-bold tracking-tight text-slate-300">00:00:00</h2>}
+                                {isActiveSession ? <ActiveTimer checkInTime={todayRecord?.check_in || ""} /> : <h2 className="text-3xl font-bold tracking-tight text-slate-300">00:00:00</h2>}
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</p>
                             </div>
                         </div>
                         {todayRecord?.check_in && (
                             <div className="grid grid-cols-2 gap-4 pt-8 border-t border-slate-50 text-xs">
-                                <div className="text-left"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">In Time</p><p className="font-semibold text-slate-900">{new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
-                                <div className="text-right"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Mode</p><p className="font-semibold text-emerald-600 capitalize">{todayRecord.mode}</p></div>
+                                <div className="text-left"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">In Time</p><p className="font-semibold text-slate-900">{todayRecord?.check_in ? new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</p></div>
+                                <div className="text-right"><p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Mode</p><p className="font-semibold text-emerald-600 capitalize">{todayRecord?.mode || '—'}</p></div>
                             </div>
                         )}
                     </div>

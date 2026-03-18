@@ -326,8 +326,10 @@ export default function AttendanceAnalyticsPage() {
                     {selfData ? (
                         <SelfAnalytics emp={selfData} />
                     ) : (
-                        <div className="py-24 text-center text-slate-400 font-medium border border-dashed border-slate-200 rounded-3xl bg-white">
-                            No attendance records found for your account in the last 30 days.
+                        <div className="py-24 text-center text-slate-400 font-medium border border-dashed border-slate-200 rounded-3xl bg-white shadow-sm">
+                            <Clock size={40} className="mx-auto mb-4 opacity-20" />
+                            <p>No attendance records found for your account in the last 30 days.</p>
+                            <p className="text-xs mt-2">Start checking in to see your analytics trends!</p>
                         </div>
                     )}
                 </>
