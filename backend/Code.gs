@@ -1263,6 +1263,38 @@ function handleMarkSalaryPaid(params) {
 // Triggers (Setup manually in Google Apps Script Console)
 // -------------------------------------------------------------
 // 1. processMonthlySalaries -> Monthly, 1st day, 00:00
+// 2. sendCheckoutReminders -> Daily, 19:30 (7:30 PM)
+
+function sendCheckoutReminders() {
+  const attendance = getSheetData('attendance');
+  const employees = getSheetData('employees');
+  
+  const today = getTodayStr();
+  
+  // Find active check-ins for today
+  const activeSessions = attendance.filter(a => String(a.date) === today && (!a.check_out || String(a.check_out).trim() === '' || String(a.check_out).trim() === '---'));
+  
+  activeSessions.forEach(session => {
+    const empId = session.employee_id;
+    const emp = employees.find(e => String(e.employee_id) === String(empId));
+    
+    if (emp) {
+      const roleLower = String(emp.role || '').trim().toLowerCase();
+      // Exclude Super Admin
+      if (roleLower !== 'super admin') {
+        createNotification(
+          empId,
+          "Checkout Reminder",
+          "You haven't checked out yet! Please remember to log your check-out for today.",
+          "warning",
+          "/dashboard/attendance",
+          "",
+          "System"
+        );
+      }
+    }
+  });
+}
 
 // -------------------------------------------------------------
 // Attendance Analytics

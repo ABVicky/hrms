@@ -1,18 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import * as React from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, LogOut, Check, User, Clock, Download, RefreshCw } from "lucide-react";
 import { appsScriptFetch } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { usePWA } from "@/contexts/PWAContext";
+import { toast } from "react-hot-toast";
 
 export default function Header() {
     const { user, logout, attendanceStatus } = useAuth();
     const { isInstallable, installApp, updateApp, swUpdateAvailable } = usePWA();
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+    const knownNotificationIds = React.useRef(new Set<string>());
+
+    useEffect(() => {
+        // Request native notification permission on mount
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -23,7 +33,25 @@ export default function Header() {
                     department: user.department,
                     role: user.role?.toLowerCase()
                 });
-                if (data) setNotifications(data);
+                if (data) {
+                    // Check for newly arriving notifications
+                    if (knownNotificationIds.current.size > 0) {
+                        data.forEach((n: any) => {
+                            if (!knownNotificationIds.current.has(n.id) && !n.read) {
+                                // Trigger native push notification
+                                if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                                    new Notification(n.title, { body: n.message, icon: '/logo.png' });
+                                }
+                                // Trigger in-app toast
+                                toast.success(`${n.title}: ${n.message}`, { id: n.id, icon: '🔔' });
+                            }
+                        });
+                    }
+                    
+                    // Update known IDs
+                    data.forEach((n: any) => knownNotificationIds.current.add(n.id));
+                    setNotifications(data);
+                }
             } catch (error) {
                 console.error("Failed to fetch notifications", error);
             }
