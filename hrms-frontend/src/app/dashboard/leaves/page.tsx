@@ -47,10 +47,12 @@ export default function LeavesPage() {
         setLoading(true);
         setMessage(null);
         try {
-            await appsScriptFetch('/leave-approve-reject', {
+            const endpoint = status === 'approved' ? '/approve-request' : '/reject-request';
+            await appsScriptFetch(endpoint, {
                 request_id: requestId,
-                status,
-                admin_id: user?.employee_id,
+                type: 'leave',
+                role: user?.role,
+                approver_id: user?.employee_id,
                 remarks: adminRemarks[requestId] || ''
             });
             setMessage({ type: 'success', text: `Leave ${status} successfully.` });

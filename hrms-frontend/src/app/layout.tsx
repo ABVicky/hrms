@@ -39,6 +39,7 @@ export const viewport = {
 };
 
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({
   children,
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen`}>
         <AuthProvider>
           <PWAProvider>
+            <Toaster position="top-right" />
             <NotificationManager />
             <PWAHandler />
             <PWAUpdatePrompt />

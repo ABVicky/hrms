@@ -123,6 +123,9 @@ function handleRequest(e, method) {
       case '/get-expenses':
         result = getExpenses(params);
         break;
+      case '/expense-update-payment':
+        result = handleExpenseUpdatePayment(params);
+        break;
       case '/latest-status':
         result = getLatestStatus(params);
         break;
@@ -790,6 +793,49 @@ function handleRejectRequest(params) {
   
   clearCache(request.employee_id);
   return { status: 'Request rejected successfully' };
+}
+
+function handleExpenseUpdatePayment(params) {
+  const { expense_id, payment_status, status, admin_id } = params;
+  
+  // if payment is being made, the expense itself should be approved
+  const updateData = { payment_status: payment_status };
+  if (status) {
+    updateData.status = status;
+  }
+  
+  updateRowInSheet('expenses', 'expense_id', expense_id, updateData);
+  
+  const data = getSheetData('expenses');
+  const expense = data.find(r => r.expense_id == expense_id);
+  
+  if (expense && payment_status === 'paid') {
+    createNotification(
+      expense.employee_id,
+      `Expense Reimbursed`,
+      `Your expense claim of ₹${expense.amount} has been paid/settled by finance.`,
+      'success',
+      '/dashboard/expenses',
+      '',
+      'Finance'
+    );
+    
+    // Update status in central requests if setting to approved
+    if (status === 'approved') {
+       const requests = getSheetData('requests');
+       const centralReq = requests.find(r => String(r.user_id) === String(expense.employee_id) && r.form_type === 'Reimbursement' && r.status !== 'approved' && r.status !== 'rejected');
+       if (centralReq) {
+         updateRequestStatus(centralReq.id, 'approved', admin_id);
+       }
+    }
+  }
+  
+  if (expense) {
+    clearCache(expense.employee_id);
+  }
+  clearCache('all'); // Clear global cache for admin view
+  
+  return { status: `Payment updated to ${payment_status}`, expense_id };
 }
 
 function getDashboardStats(params) {
