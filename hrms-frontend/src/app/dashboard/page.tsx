@@ -205,6 +205,21 @@ export default function DashboardPage() {
                         )}
                     </div>
 
+                    {/* Payroll Overview (Finance & Super Admin) */}
+                    {(user?.role?.toLowerCase() === 'finance' || user?.department?.toLowerCase() === 'finance' || ['super admin'].includes(user?.role?.toLowerCase() || '')) && (
+                        <section className="space-y-4">
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                                Payroll Overview
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
+                                <StatCard label="Total Processed" value={`₹${(stats?.total_payroll_processed || 0).toLocaleString()}`} icon={IndianRupee} variant="blue" />
+                                <StatCard label="Total Paid" value={`₹${(stats?.total_paid || 0).toLocaleString()}`} icon={CheckCircle2} variant="emerald" />
+                                <StatCard label="Pending Payroll" value={`₹${(stats?.total_pending_payroll || 0).toLocaleString()}`} icon={Clock} variant="amber" />
+                            </div>
+                        </section>
+                    )}
+
                     {/* Pending Actions for Admins / Managers */}
                     {(isHR || isFinance) && (stats?.pending_leaves_list?.length > 0 || stats?.pending_expenses_list?.length > 0) && (
                         <section className="space-y-4">
@@ -325,7 +340,8 @@ function StatCard({ label, value, icon: Icon, variant, highlight }: any) {
         emerald: "text-emerald-600 bg-emerald-50",
         cyan: "text-cyan-600 bg-cyan-50",
         amber: "text-amber-600 bg-amber-50",
-        violet: "text-violet-600 bg-violet-50"
+        violet: "text-violet-600 bg-violet-50",
+        blue: "text-blue-600 bg-blue-50"
     };
 
     return (

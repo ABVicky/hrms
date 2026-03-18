@@ -61,8 +61,8 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             items.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
         }
 
-        // Salary module visibility - Finance and Super Admin and Employees
-        if (isFinanceAdmin(user) || isSuperAdmin(user) || isEmployee(user)) {
+        // Salary module visibility - Everyone except Super Admin (per requirements)
+        if (!isSuperAdmin(user)) {
             items.push({ name: "Salary", href: "/dashboard/salary", icon: Wallet });
         }
 

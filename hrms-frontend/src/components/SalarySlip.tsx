@@ -89,11 +89,12 @@ export default function SalarySlip({ slip, showDownload = true }: SalarySlipProp
           </div>
           <div className="text-right">
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 ${
-              slip.status === 'released' ? 'bg-emerald-100 text-emerald-700' :
-              slip.status === 'approved' ? 'bg-blue-100 text-blue-700' :
+              slip.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' :
+              slip.status === 'Processed' ? 'bg-blue-100 text-blue-700' :
+              slip.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
               'bg-slate-100 text-slate-600'
             }`}>
-              {slip.status === 'released' ? <CheckCircle2 size={12} /> : null}
+              {slip.status === 'Paid' ? <CheckCircle2 size={12} /> : null}
               {slip.status}
             </div>
             <p className="text-sm text-slate-400">Slip ID: {slip.slip_id.split('-')[0].toUpperCase()}</p>

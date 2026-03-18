@@ -8,12 +8,8 @@ import SalarySlip from "@/components/SalarySlip";
 import { 
   X, 
   Save, 
-  CheckCircle, 
-  AlertCircle,
-  TrendingUp,
-  Users,
-  Calendar,
-  Wallet 
+  CheckCircle,
+  Calendar
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -26,7 +22,9 @@ export default function SalaryPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ adjustments: 0, fines: 0 });
 
-  const isFinance = user?.role === 'Super Admin' || user?.department === 'Finance';
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.role?.toLowerCase() === 'super admin';
+  const isFinance = isSuperAdmin || user?.department === 'Finance' || user?.role === 'Finance';
+  const canEditSalary = (user?.department === 'Finance' || user?.role === 'Finance') && !isSuperAdmin;
 
   useEffect(() => {
     fetchSlips();
@@ -38,7 +36,8 @@ export default function SalaryPage() {
       setLoading(true);
       const data = await appsScriptFetch("/get-salary-slips", { 
         employee_id: user.employee_id, 
-        role: user.role 
+        role: user.role,
+        department: user.department
       });
       setSlips(data || []);
     } catch (err) {
@@ -79,13 +78,25 @@ export default function SalaryPage() {
 
   const handleApproveSlip = async () => {
     try {
-      toast.loading("Approving slip...", { id: "approve" });
+      toast.loading("Processing salary...", { id: "process" });
       await appsScriptFetch("/approve-salary", { slip_id: selectedSlip.slip_id });
-      toast.success("Salary approved!", { id: "approve" });
+      toast.success("Salary processed!", { id: "process" });
       fetchSlips();
       setIsModalOpen(false);
     } catch (err) {
-      toast.error("Failed to approve salary", { id: "approve" });
+      toast.error("Failed to process salary", { id: "process" });
+    }
+  };
+
+  const handleMarkReceived = async () => {
+    try {
+      toast.loading("Marking as received...", { id: "receive" });
+      await appsScriptFetch("/mark-salary-paid", { slip_id: selectedSlip.slip_id, employee_id: user?.employee_id });
+      toast.success("Salary marked as received!", { id: "receive" });
+      fetchSlips();
+      setIsModalOpen(false);
+    } catch (err) {
+      toast.error("Failed to mark as received", { id: "receive" });
     }
   };
 
@@ -99,7 +110,7 @@ export default function SalaryPage() {
 
   // Stats for Finance
   const totalPayout = slips.reduce((sum, s) => sum + parseFloat(s.final_amount), 0);
-  const pendingApprovals = slips.filter(s => s.status === 'draft').length;
+  const pendingApprovals = slips.filter(s => s.status === 'Pending').length;
 
   return (
     <>
@@ -118,11 +129,11 @@ export default function SalaryPage() {
 
             {/* Slip Content */}
             <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-white">
-               <SalarySlip slip={selectedSlip} showDownload={selectedSlip.status === 'released' || isFinance} />
+               <SalarySlip slip={selectedSlip} showDownload={selectedSlip.status === 'Paid' || isFinance} />
             </div>
 
             {/* Finance Controls Side Panel */}
-            {isFinance && (
+            {canEditSalary && (
               <div className="w-full md:w-80 bg-slate-50 border-l border-slate-100 p-8 flex flex-col gap-8">
                  <div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 font-bold">Finance Actions</h3>
@@ -165,23 +176,39 @@ export default function SalaryPage() {
                  </div>
 
                  <div className="mt-auto space-y-4 pt-8 border-t border-slate-200">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Final Approval</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</p>
                     
-                    {selectedSlip.status === 'draft' ? (
+                    {selectedSlip.status === 'Pending' ? (
                       <button 
                         onClick={handleApproveSlip}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                       >
                         <CheckCircle size={18} />
-                        Approve Salary
+                        Process Salary
                       </button>
                     ) : (
                       <div className="w-full flex items-center justify-center gap-2 py-4 bg-slate-200 text-slate-500 rounded-2xl font-bold cursor-not-allowed">
                         <CheckCircle size={18} />
-                        {selectedSlip.status === 'approved' ? 'Already Approved' : 'Released'}
+                        {selectedSlip.status === 'Processed' || selectedSlip.status === 'Paid' ? selectedSlip.status : 'Processed'}
                       </div>
                     )}
                  </div>
+              </div>
+            )}
+
+            {/* Employee Actions Side Panel */}
+            {!isFinance && selectedSlip.status === 'Processed' && (
+              <div className="w-full md:w-80 bg-slate-50 border-l border-slate-100 p-8 flex flex-col justify-end">
+                <div className="mt-auto space-y-4 pt-8 border-t border-slate-200">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Confirm Receipt</p>
+                    <button 
+                      onClick={handleMarkReceived}
+                      className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                    >
+                      <CheckCircle size={18} />
+                      Mark as Received
+                    </button>
+                </div>
               </div>
             )}
           </div>

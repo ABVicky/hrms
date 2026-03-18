@@ -141,6 +141,9 @@ function handleRequest(e, method) {
       case '/approve-salary':
         result = handleApproveSalary(params);
         break;
+      case '/mark-salary-paid':
+        result = handleMarkSalaryPaid(params);
+        break;
       case '/get-user-requests':
         result = getUserRequests(params);
         break;
@@ -840,6 +843,12 @@ function getDashboardStats(params) {
   const personal_pending_expenses = expenses.filter(e => e.employee_id == employee_id && String(e.status).startsWith('pending')).length;
   const personal_total_requests = leaves.filter(l => l.employee_id == employee_id).length + expenses.filter(e => e.employee_id == employee_id).length;
 
+  // Payroll Stats for dashboard
+  const allSlips = getSheetData('salary_slips');
+  const total_payroll_processed = allSlips.reduce((sum, s) => sum + ((s.status === 'Processed' || s.status === 'Paid') ? parseFloat(s.final_amount || 0) : 0), 0);
+  const total_paid = allSlips.reduce((sum, s) => sum + (s.status === 'Paid' ? parseFloat(s.final_amount || 0) : 0), 0);
+  const total_pending_payroll = allSlips.reduce((sum, s) => sum + (s.status === 'Pending' ? parseFloat(s.final_amount || 0) : 0), 0);
+
   // Basic stats
   const stats = {
     total_employees: employees.filter(e => e.account_status !== 'inactive').length,
@@ -852,7 +861,10 @@ function getDashboardStats(params) {
     pending_leaves_list,
     pending_expenses_list,
     latest_announcements: announcements,
-    recent_notifications: notifications
+    recent_notifications: notifications,
+    total_payroll_processed,
+    total_paid,
+    total_pending_payroll
   };
   
   // Cache for only 5 seconds to ensure near real-time sync while still protecting the sheet from extreme spam
@@ -1133,7 +1145,7 @@ function processMonthlySalaries() {
       adjustments: 0,
       fines: 0,
       final_amount: calculation.finalAmount,
-      status: 'draft',
+      status: 'Pending',
       generated_date: getNowIso(),
       released_date: ''
     };
@@ -1142,39 +1154,21 @@ function processMonthlySalaries() {
   });
 }
 
-function releaseSalarySlips() {
-  const slips = getSheetData('salary_slips');
-  const now = new Date();
-  const monthYear = `${now.getMonth()}/${now.getFullYear()}`; // Note: This check might need more precision depending on exactly when it runs
-
-  slips.forEach(slip => {
-    if (slip.status === 'approved') {
-      updateRowInSheet('salary_slips', 'slip_id', slip.slip_id, {
-        status: 'released',
-        released_date: getNowIso()
-      });
-      
-      createNotification(
-        slip.employee_id,
-        "Salary Slip Released",
-        `Your salary slip for ${slip.month_year} is now available.`,
-        "success",
-        "/dashboard/salary"
-      );
-    }
-  });
-}
 
 function getSalarySlips(params) {
-  const { employee_id, role } = params;
+  const { employee_id, role, department } = params;
   const allSlips = getSheetData('salary_slips');
   
-  if (role === 'Finance' || role === 'Super Admin') {
+  const roleLower = String(role || '').trim().toLowerCase();
+  const deptLower = String(department || '').trim().toLowerCase();
+  const isFinanceAdmin = roleLower === 'super admin' || roleLower === 'finance' || deptLower === 'finance';
+  
+  if (isFinanceAdmin) {
     return allSlips;
   }
   
-  // Regular employees only see released slips
-  return allSlips.filter(s => String(s.employee_id) === String(employee_id) && s.status === 'released');
+  // Regular employees see all their slips now
+  return allSlips.filter(s => String(s.employee_id) === String(employee_id));
 }
 
 function handleUpdateSalarySlip(params) {
@@ -1207,9 +1201,61 @@ function handleUpdateSalarySlip(params) {
 
 function handleApproveSalary(params) {
   const { slip_id } = params;
+  const slips = getSheetData('salary_slips');
+  const slip = slips.find(s => s.slip_id === slip_id);
+  
+  if (!slip) throw new Error("Salary slip not found");
+
   updateRowInSheet('salary_slips', 'slip_id', slip_id, {
-    status: 'approved'
+    status: 'Processed'
   });
+  
+  createNotification(
+    slip.employee_id,
+    "Salary Processed",
+    `Your salary for ${slip.month_year} has been processed by Finance.`,
+    "success",
+    "/dashboard/salary"
+  );
+  
+  return { success: true };
+}
+
+function handleMarkSalaryPaid(params) {
+  const { slip_id, employee_id } = params;
+  const slips = getSheetData('salary_slips');
+  const slip = slips.find(s => s.slip_id === slip_id);
+  
+  if (!slip) throw new Error("Salary slip not found");
+  
+  // Validate ownership
+  if (String(slip.employee_id) !== String(employee_id)) {
+    throw new Error("Unauthorized");
+  }
+
+  updateRowInSheet('salary_slips', 'slip_id', slip_id, {
+    status: 'Paid',
+    released_date: getNowIso()
+  });
+  
+  // Notify Finance Admin and Super Admin
+  createNotification(
+    '',
+    "Salary Received",
+    `${slip.employee_name} marked their ${slip.month_year} salary as received.`,
+    "info",
+    "/dashboard/salary",
+    "Finance"
+  );
+  createNotification(
+    '',
+    "Salary Received",
+    `${slip.employee_name} marked their ${slip.month_year} salary as received.`,
+    "info",
+    "/dashboard/salary",
+    "Super Admin"
+  );
+  
   return { success: true };
 }
 
@@ -1217,7 +1263,6 @@ function handleApproveSalary(params) {
 // Triggers (Setup manually in Google Apps Script Console)
 // -------------------------------------------------------------
 // 1. processMonthlySalaries -> Monthly, 1st day, 00:00
-// 2. releaseSalarySlips -> Monthly, 5th day, 10:00
 
 // -------------------------------------------------------------
 // Attendance Analytics
