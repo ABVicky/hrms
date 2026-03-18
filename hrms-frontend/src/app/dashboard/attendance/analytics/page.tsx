@@ -12,6 +12,7 @@ import {
     CheckCircle2, XCircle
 } from "lucide-react";
 import Link from "next/link";
+import { formatWorkingHours } from "@/lib/utils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -246,7 +247,7 @@ function SelfAnalytics({ emp }: { emp: EmployeeAnalytics }) {
                                     <>
                                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${day.mode === 'wfh' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>{day.mode}</span>
                                         {day.is_late && <span className="text-[9px] font-black px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full">+{day.late_by_minutes}m late</span>}
-                                        <span className="font-black text-slate-700 text-sm tabular-nums w-10 text-right">{day.working_hours.toFixed(1)}h</span>
+                                        <span className="font-black text-slate-700 text-sm tabular-nums w-14 text-right">{formatWorkingHours(day.working_hours)}</span>
                                     </>
                                 )}
                                 {day.absent && <span className="text-xs font-black text-rose-400">Absent</span>}

@@ -63,3 +63,25 @@ export function playAttendanceSound(type: 'checkin' | 'checkout') {
         console.warn("Audio feedback failed:", e);
     }
 }
+
+/**
+ * Converts decimal hours (e.g., 7.96) to HH:MM:SS format
+ */
+export function formatWorkingHours(decimalHours: string | number | undefined): string {
+    if (decimalHours === undefined || decimalHours === null || decimalHours === '') return "00:00:00";
+    
+    // Parse to float
+    const totalHours = typeof decimalHours === 'string' ? parseFloat(decimalHours) : decimalHours;
+    
+    if (isNaN(totalHours) || totalHours <= 0) return "00:00:00";
+    
+    const h = Math.floor(totalHours);
+    const m = Math.floor((totalHours * 60) % 60);
+    const s = Math.round((totalHours * 3600) % 60);
+    
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    
+    return `${hh}:${mm}:${ss}`;
+}

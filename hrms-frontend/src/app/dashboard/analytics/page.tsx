@@ -13,7 +13,7 @@ import {
     CheckCircle2, XCircle, User, Clock
 } from "lucide-react";
 import Link from "next/link";
-import { getImageUrl } from "@/lib/utils";
+import { getImageUrl, formatWorkingHours } from "@/lib/utils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -281,7 +281,7 @@ function EmployeeModal({ emp, onClose }: { emp: EmployeeAnalytics; onClose: () =
                                                         +{day.late_by_minutes}m late
                                                     </span>
                                                 )}
-                                                <span className="text-sm font-black text-slate-700 tabular-nums w-12 text-right">{day.working_hours.toFixed(1)}h</span>
+                                                <span className="text-sm font-black text-slate-700 tabular-nums w-14 text-right">{formatWorkingHours(day.working_hours)}</span>
                                             </>
                                         )}
                                         {day.absent && <span className="text-xs font-black text-rose-400 uppercase tracking-wider">Absent</span>}
@@ -336,11 +336,7 @@ function EmployeeCard({ emp, onClick }: { emp: EmployeeAnalytics; onClick: () =>
                             day.mode === 'wfh' ? 'bg-cyan-400' :
                             'bg-emerald-400'
                         }`} title={`${day.date}: ${day.absent ? 'Absent' : `${day.working_hours.toFixed(1)}h${day.is_late ? ' (late)' : ''}`}`} />
-                        <span className={`text-[8px] font-bold ${
-                            day.absent ? 'text-rose-400' : 'text-slate-400'
-                        }`}>
-                            {day.absent ? '—' : `${day.working_hours.toFixed(0)}h`}
-                        </span>
+                            {day.absent ? '—' : formatWorkingHours(day.working_hours).split(':')[0] + 'h'}
                     </div>
                 ))}
             </div>

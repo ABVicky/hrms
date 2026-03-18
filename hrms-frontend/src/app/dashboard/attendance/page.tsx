@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
 import { MapPin, Clock, Home, AlertCircle, Loader2, Power, Camera, X, CheckCircle2, Crosshair, BarChart2 } from "lucide-react";
 import ActiveTimer from "@/components/ActiveTimer";
-import { playAttendanceSound } from "@/lib/utils";
+import { playAttendanceSound, formatWorkingHours } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -494,7 +494,7 @@ export default function AttendancePage() {
                                         </td>
                                         <td className="px-10 py-6">{record.check_in ? new Date(record.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
                                         <td className="px-10 py-6">{record.check_out ? new Date(record.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                                        <td className="px-10 py-6 text-slate-900 font-black text-right">{record.working_hours || '0.00'}h</td>
+                                        <td className="px-10 py-6 text-slate-900 font-black text-right">{formatWorkingHours(record.working_hours)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -522,7 +522,7 @@ export default function AttendancePage() {
                                     </div>
                                     <div className="bg-rose-50 p-2.5 rounded-2xl">
                                         <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-0.5">Work</p>
-                                        <p className="text-xs font-black text-rose-600">{record.working_hours || '0.00'}h</p>
+                                        <p className="text-xs font-black text-rose-600 tabular-nums">{formatWorkingHours(record.working_hours)}</p>
                                     </div>
                                 </div>
                             </div>
