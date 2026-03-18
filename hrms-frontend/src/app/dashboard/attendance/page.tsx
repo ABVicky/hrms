@@ -8,6 +8,7 @@ import ActiveTimer from "@/components/ActiveTimer";
 import { playAttendanceSound, formatWorkingHours } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isSuperAdmin } from "@/lib/roles";
 
 // Office geo-fence
 const OFFICE_COORDS = { lat: 22.596755385565324, lng: 88.39958873340666 };
@@ -28,6 +29,21 @@ function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2
 export default function AttendancePage() {
     const { user, performAttendanceAction, attendanceStatus } = useAuth();
     const router = useRouter();
+
+    if (isSuperAdmin(user)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center space-y-4 bg-slate-50 rounded-3xl border border-slate-100 mt-8">
+                <div className="p-4 bg-white rounded-2xl shadow-sm text-slate-400 ring-1 ring-slate-100">
+                    <AlertCircle size={32} />
+                </div>
+                <div>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Access Restricted</h2>
+                    <p className="text-sm text-slate-500 font-medium">Super Admins monitor activity but do not mark attendance.</p>
+                </div>
+            </div>
+        );
+    }
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
     const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);

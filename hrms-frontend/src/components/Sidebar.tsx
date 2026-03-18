@@ -17,6 +17,7 @@ import {
     Wallet,
     BarChart2
 } from "lucide-react";
+import { isEmployee, isHRAdmin, isFinanceAdmin, isSuperAdmin } from "@/lib/roles";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePWA } from "@/contexts/PWAContext";
 import { getImageUrl } from "@/lib/utils";
@@ -30,29 +31,23 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
     if (!user) return null;
 
     const getNavItems = () => {
-        const role = user.role?.toLowerCase();
-        const HR_LEVEL_ROLES = ["super admin", "hr admin", "manager", "ceo", "admin"];
-        const ANALYTICS_ROLES = ["super admin", "hr admin", "admin"];
-        
-        const isHR = role && HR_LEVEL_ROLES.includes(role);
-        const canSeeAllAnalytics = role && ANALYTICS_ROLES.includes(role);
-
         const items: any[] = [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         ];
 
         // Attendance menu item - Hidden for Super Admin
-        if (role !== "super admin") {
+        if (!isSuperAdmin(user)) {
             items.push({ name: "Attendance", href: "/dashboard/attendance", icon: MapPin });
         }
 
-        // Analytics menu item - For Admin, HR Admin, Super Admin
-        if (canSeeAllAnalytics) {
+        // Analytics menu item - For Admin, HR Admin, Super Admin (All non-Employees maybe?)
+        // Requirement: SUPER_ADMIN monitors all activities. HR_ADMIN approves leaves.
+        if (isSuperAdmin(user) || isHRAdmin(user)) {
             items.push({ name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 });
         }
 
-        // Announcements - For HR Admin and above
-        if (isHR || role === "hr admin") {
+        // Announcements - For HR Admin and Super Admin
+        if (isHRAdmin(user) || isSuperAdmin(user)) {
             items.push({ name: "Announcements", href: "/dashboard/announcements", icon: Megaphone });
         }
 
@@ -61,13 +56,13 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             { name: "Expenses", href: "/dashboard/expenses", icon: IndianRupee }
         );
 
-        if (isHR) {
+        // Employee Management - For HR Admin and Super Admin
+        if (isHRAdmin(user) || isSuperAdmin(user)) {
             items.push({ name: "Employees", href: "/dashboard/employees", icon: Users });
         }
 
-        // Salary module visibility
-        const isFinanceDept = user.department?.toLowerCase() === "finance";
-        if (role === "super admin" || isFinanceDept || role === "employee" || role === "manager") {
+        // Salary module visibility - Finance and Super Admin and Employees
+        if (isFinanceAdmin(user) || isSuperAdmin(user) || isEmployee(user)) {
             items.push({ name: "Salary", href: "/dashboard/salary", icon: Wallet });
         }
 
