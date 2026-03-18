@@ -68,8 +68,8 @@ export default function ExpensesPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                setMessage({ type: 'error', text: 'File must be less than 2MB' });
+            if (file.size > 5 * 1024 * 1024) {
+                setMessage({ type: 'error', text: 'File must be less than 5MB' });
                 return;
             }
             const reader = new FileReader();
@@ -199,7 +199,7 @@ export default function ExpensesPage() {
                                             {fileData ? fileData.name : "Drop receipt here or tap to select"}
                                         </p>
                                         <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                                            MAX 2MB • JPG, PNG, PDF
+                                            MAX 5MB • JPG, PNG, PDF
                                         </p>
                                     </div>
                                 </div>
