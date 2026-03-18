@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Megaphone, Plus, Image as ImageIcon, CheckCircle2 } from "lucide-react";
 import { appsScriptFetch } from "@/lib/api";
+import { isHRAdmin, isSuperAdmin } from "@/lib/roles";
 
 export default function AnnouncementsPage() {
     const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function AnnouncementsPage() {
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
 
-    const canPost = user?.role === "HR Admin" || user?.role === "Super Admin";
+    const canPost = isHRAdmin(user) || isSuperAdmin(user);
 
     const loadAnnouncements = async () => {
         try {
@@ -171,7 +172,7 @@ export default function AnnouncementsPage() {
                     {loadingAnnouncements ? (
                         <div className="p-10 text-center animate-pulse text-slate-400">Loading...</div>
                     ) : announcements.length > 0 ? (
-                        announcements.map((ann: any) => (
+                                (announcements?.filter(Boolean) || []).map((ann: any) => (
                             <div key={ann.id} className="p-6 hover:bg-slate-50 transition-colors">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-3">

@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
 import { IndianRupee, AlertCircle, Upload, Info, Loader2 } from "lucide-react";
 
+import { isFinanceAdmin, isSuperAdmin } from "@/lib/roles";
+
 export default function ExpensesPage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -20,8 +22,13 @@ export default function ExpensesPage() {
     });
 
     const loadExpenses = async () => {
+        setLoadingExpenses(true);
         try {
-            const res = await appsScriptFetch('/get-expenses', { employee_id: user?.employee_id });
+            const isAdmin = isFinanceAdmin(user) || isSuperAdmin(user);
+            const endpoint = isAdmin ? '/get-all-expenses' : '/get-expenses';
+            const params = isAdmin ? {} : { employee_id: user?.employee_id };
+            
+            const res = await appsScriptFetch(endpoint, params);
             setExpenses(res || []);
         } catch (err) {
             console.error("Failed to load expenses", err);
@@ -33,6 +40,30 @@ export default function ExpensesPage() {
     useEffect(() => {
         if (user?.employee_id) loadExpenses();
     }, [user]);
+
+    const handleUpdatePayment = async (expenseId: string, payment_status: 'paid' | 'pending', status: 'approved' | 'rejected' | 'pending' = 'approved') => {
+        if (!isFinanceAdmin(user)) return;
+        
+        setLoading(true);
+        setMessage(null);
+        try {
+            await appsScriptFetch('/expense-update-payment', {
+                expense_id: expenseId,
+                payment_status,
+                status, // Mark as approved if it was pending and finance is paying it
+                admin_id: user?.employee_id
+            });
+            setMessage({ type: 'success', text: `Payment status updated to ${payment_status}.` });
+            loadExpenses();
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message || `Failed to update payment status.` });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const showApplyForm = !isSuperAdmin(user) && !isFinanceAdmin(user);
+    const isAdminView = isFinanceAdmin(user) || isSuperAdmin(user);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -93,7 +124,9 @@ export default function ExpensesPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Expenses</h1>
-                        <p className="text-xs md:text-sm text-slate-500 font-medium tracking-tight">Claim your reimbursements with ease.</p>
+                        <p className="text-xs md:text-sm text-slate-500 font-medium tracking-tight">
+                            {isAdminView ? "Verify and settle reimbursement claims." : "Claim your reimbursements with ease."}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -108,6 +141,7 @@ export default function ExpensesPage() {
                 </div>
             )}
 
+            {showApplyForm && (
             <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-100 premium-card">
                 <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
@@ -200,6 +234,7 @@ export default function ExpensesPage() {
                     </button>
                 </form>
             </div>
+            )}
 
             {/* Expense History Section */}
             <div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden premium-card">
@@ -212,8 +247,8 @@ export default function ExpensesPage() {
                 <div className="md:hidden divide-y divide-slate-50">
                     {loadingExpenses ? (
                         <div className="p-10 text-center animate-pulse text-slate-400">Loading history...</div>
-                    ) : expenses.length > 0 ? (
-                        expenses.map((expense: any) => (
+                    ) : (expenses?.filter(Boolean) || []).length > 0 ? (
+                        expenses.filter(Boolean).map((expense: any) => (
                             <div key={expense.expense_id} className="p-6 space-y-5 active:bg-slate-50 transition-colors clickable group">
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
@@ -224,7 +259,7 @@ export default function ExpensesPage() {
                                                 expense.status === 'rejected' ? 'bg-rose-50 text-rose-600 ring-rose-100' :
                                                 'bg-amber-50 text-amber-600 ring-amber-100'
                                             }`}>
-                                                {expense.status.replace('_', ' ')}
+                                                {(expense.status || 'pending').replace('_', ' ')}
                                             </span>
                                         </div>
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{expense.category}</p>
@@ -244,10 +279,19 @@ export default function ExpensesPage() {
                                 </div>
                                 {expense.receipt_file && (
                                     <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-slate-50 transition-all shadow-sm">
-                                        <Info size={14} />
-                                        View Attachment
-                                    </a>
-                                )}
+                                         <Info size={14} />
+                                         View Attachment
+                                     </a>
+                                 )}
+
+                                 {isFinanceAdmin(user) && expense.payment_status !== 'paid' && (
+                                     <button 
+                                         onClick={() => handleUpdatePayment(expense.expense_id, 'paid')}
+                                         className="w-full py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                                     >
+                                         Mark as Paid
+                                     </button>
+                                 )}
                             </div>
                         ))
                     ) : (
@@ -260,21 +304,28 @@ export default function ExpensesPage() {
                     <table className="w-full text-left">
                         <thead className="bg-slate-50/30 text-slate-400 font-bold uppercase tracking-[0.15em] text-[11px]">
                             <tr>
+                                {isAdminView && <th className="px-10 py-6">Employee</th>}
                                 <th className="px-10 py-6">Timeline</th>
                                 <th className="px-10 py-6">Amount</th>
                                 <th className="px-10 py-6">Status</th>
                                 <th className="px-10 py-6">Payment</th>
+                                {isFinanceAdmin(user) && <th className="px-10 py-6">Settlement</th>}
                                 <th className="px-10 py-6 text-right">Receipt</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {expenses.map((expense: any) => (
+                            {(expenses?.filter(Boolean) || []).map((expense: any) => (
                                 <tr key={expense.expense_id} className="group hover:bg-slate-50/30 transition-all duration-300">
+                                    {isAdminView && (
+                                        <td className="px-10 py-8">
+                                            <p className="font-black text-slate-900 text-sm uppercase tracking-tight">{expense.employee_name || expense.employee_id}</p>
+                                        </td>
+                                    )}
                                     <td className="px-10 py-8">
                                         <div className="space-y-0.5">
                                             <p className="font-black text-slate-900 text-lg tracking-tight capitalize">{expense.category}</p>
                                             <p className="text-[11px] font-bold text-slate-400 tracking-wider">
-                                                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                {new Date(expense.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </p>
                                         </div>
                                     </td>
@@ -292,7 +343,7 @@ export default function ExpensesPage() {
                                                 expense.status === 'rejected' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' :
                                                 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
                                             }`}></div>
-                                            {expense.status.replace('_', ' ')}
+                                            {(expense.status || 'pending').replace('_', ' ')}
                                         </div>
                                     </td>
                                     <td className="px-10 py-8">
@@ -303,6 +354,23 @@ export default function ExpensesPage() {
                                             </p>
                                         </div>
                                     </td>
+                                    {isFinanceAdmin(user) && (
+                                        <td className="px-10 py-8">
+                                            {expense.payment_status !== 'paid' ? (
+                                                <button 
+                                                    onClick={() => handleUpdatePayment(expense.expense_id, 'paid')}
+                                                    className="px-4 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                                                >
+                                                    Mark as Paid
+                                                </button>
+                                            ) : (
+                                                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Settled
+                                                </p>
+                                            )}
+                                        </td>
+                                    )}
                                     <td className="px-10 py-8 text-right">
                                         {expense.receipt_file ? (
                                             <a href={expense.receipt_file} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-slate-50 transition-all shadow-sm">

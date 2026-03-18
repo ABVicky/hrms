@@ -4,17 +4,21 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { appsScriptFetch } from "@/lib/api";
 
-type Role = "Super Admin" | "HR Admin" | "Finance" | "Manager" | "Employee" | "CEO" | "Admin";
+export type Role = "SUPER_ADMIN" | "ADMIN" | "FINANCE_ADMIN" | "EMPLOYEE" | "MANAGER" | "CEO";
 
 export interface User {
     employee_id: string;
     name: string;
     email: string;
     phone?: string;
-    role: Role;
+    role: string;
     department: string;
     manager_id?: string;
     employee_type: string;
+    joining_date?: string;
+    account_status?: string;
+    contract_end_date?: string;
+    salary?: string;
     profile_picture?: string;
 }
 

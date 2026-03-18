@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { appsScriptFetch } from "@/lib/api";
 import { Users, Mail, Plus, AlertCircle, User, X, Loader2, Phone, Briefcase, Calendar as CalendarIcon, Shield, DollarSign } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
+import { isHRAdmin, isSuperAdmin, isManager } from "@/lib/roles";
 
 export default function EmployeesPage() {
     const { user } = useAuth();
@@ -16,35 +17,52 @@ export default function EmployeesPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+    const activeEmployees = (employees || []).filter(emp => emp && typeof emp === 'object');
+
+    const [apiError, setApiError] = useState<string | null>(null);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
         department: 'Development',
-        role: 'Employee',
+        role: 'Employee' as any,
         salary: '',
-        employee_type: 'Full-time',
+        employee_type: 'full_time',
+        account_status: 'active',
+        contract_end_date: '',
         manager_id: '',
         joining_date: new Date().toISOString().split('T')[0],
         password: ''
     });
 
     const loadEmployees = async () => {
+        if (!user) return;
         setLoading(true);
+        setApiError(null);
         try {
+            // Must not send params to /employee for a full GET, as params cause it to act differently
             const data = await appsScriptFetch("/employee");
-            setEmployees(data || []);
-        } catch (error) {
+            
+            if (data && (Array.isArray(data) || data.employees)) {
+                const employeesList = Array.isArray(data) ? data : (data.employees || []);
+                setEmployees(employeesList);
+            } else {
+                setEmployees([]);
+                setApiError("Backend returned success but no employee records or invalid format.");
+            }
+        } catch (error: any) {
             console.error("Failed to load employees", error);
+            setApiError(error.message || "Unknown error");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (user?.role === "Super Admin" || user?.role === "HR Admin") {
+        if (user && (isSuperAdmin(user) || isHRAdmin(user))) {
             loadEmployees();
-        } else {
+        } else if (user) {
             setLoading(false);
         }
     }, [user]);
@@ -63,9 +81,11 @@ export default function EmployeesPage() {
                 email: '',
                 phone: '',
                 department: 'Development',
-                role: 'Employee',
+                role: 'Employee' as any,
                 salary: '',
-                employee_type: 'Full-time',
+                employee_type: 'full_time',
+                account_status: 'active',
+                contract_end_date: '',
                 manager_id: '',
                 joining_date: new Date().toISOString().split('T')[0],
                 password: ''
@@ -87,7 +107,9 @@ export default function EmployeesPage() {
             department: emp.department || 'Development',
             role: emp.role || 'Employee',
             salary: emp.salary || '',
-            employee_type: emp.employee_type || 'Full-time',
+            employee_type: emp.employee_type || 'full_time',
+            account_status: emp.account_status || 'active',
+            contract_end_date: emp.contract_end_date || '',
             manager_id: emp.manager_id || '',
             joining_date: emp.joining_date || '',
             password: '' 
@@ -124,7 +146,7 @@ export default function EmployeesPage() {
         }
     };
 
-    if (user?.role !== "Super Admin" && user?.role !== "HR Admin") {
+    if (!isSuperAdmin(user) && !isHRAdmin(user)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-500">
                 <AlertCircle size={48} className="mb-4 text-slate-300" />
@@ -156,6 +178,13 @@ export default function EmployeesPage() {
                 </button>
             </div>
 
+            {apiError && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-center gap-3 animate-in fade-in">
+                    <AlertCircle size={18} className="text-rose-600" />
+                    <span className="text-sm font-bold text-rose-700">{apiError}</span>
+                </div>
+            )}
+
             {message && (
                 <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 ${
                     message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
@@ -181,7 +210,7 @@ export default function EmployeesPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {employees.map((emp) => (
+                                {activeEmployees.map((emp) => (
                                     <tr key={emp.employee_id} className="hover:bg-slate-50 transition">
                                         <td className="px-6 py-4 text-slate-900 font-medium">
                                             <div className="flex items-center gap-3">
@@ -229,10 +258,10 @@ export default function EmployeesPage() {
                                         </td>
                                     </tr>
                                 ))}
-                                {employees.length === 0 && (
+                                {(activeEmployees.length === 0 && !loading) && (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                                            No employees found. Check Google Sheets.
+                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-medium">
+                                            No employee records found. Please ensure the Google Sheet is populated correctly.
                                         </td>
                                     </tr>
                                 )}
@@ -368,6 +397,13 @@ export default function EmployeesPage() {
                                                     <option value="HR">Human Resources</option>
                                                     <option value="Finance">Finance</option>
                                                     <option value="Operations">Operations</option>
+                                                    <option value="GRAPHICS">Graphics</option>
+                                                    <option value="DME">DME</option>
+                                                    <option value="VIDEO EDITOR">Video Editor</option>
+                                                    <option value="WEBSITE DEVE">Website Development</option>
+                                                    <option value="ACCOUNTS">Accounts</option>
+                                                    <option value="CEO">CEO</option>
+                                                    <option value="COO">COO</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -389,6 +425,7 @@ export default function EmployeesPage() {
                                                     <option value="HR Admin">HR Admin</option>
                                                     <option value="Finance">Finance</option>
                                                     <option value="Super Admin">Super Admin</option>
+                                                    <option value="CEO">CEO</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -422,13 +459,53 @@ export default function EmployeesPage() {
                                                     onChange={(e) => setFormData({...formData, manager_id: e.target.value})}
                                                 >
                                                     <option value="">No Manager (Self)</option>
-                                                    {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin')).map(manager => (
+                                                    {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (isManager(e) || isSuperAdmin(e) || isHRAdmin(e))).map(manager => (
                                                         <option key={manager.employee_id} value={manager.employee_id}>
                                                             {manager.name} ({manager.role})
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Employee Type</label>
+                                            <select 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.employee_type}
+                                                onChange={(e) => setFormData({...formData, employee_type: e.target.value})}
+                                            >
+                                                <option value="full_time">Full Time</option>
+                                                <option value="part_time">Part Time</option>
+                                                <option value="Intern">Intern</option>
+                                                <option value="contract">Contract</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Account Status</label>
+                                            <select 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.account_status}
+                                                onChange={(e) => setFormData({...formData, account_status: e.target.value})}
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                                <option value="suspended">Suspended</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contract End Date</label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.contract_end_date}
+                                                onChange={(e) => setFormData({...formData, contract_end_date: e.target.value})}
+                                                disabled={formData.employee_type !== 'contract'}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -587,6 +664,13 @@ export default function EmployeesPage() {
                                                 <option value="HR">Human Resources</option>
                                                 <option value="Finance">Finance</option>
                                                 <option value="Operations">Operations</option>
+                                                <option value="GRAPHICS">Graphics</option>
+                                                <option value="DME">DME</option>
+                                                <option value="VIDEO EDITOR">Video Editor</option>
+                                                <option value="WEBSITE DEVE">Website Development</option>
+                                                <option value="ACCOUNTS">Accounts</option>
+                                                <option value="CEO">CEO</option>
+                                                <option value="COO">COO</option>
                                             </select>
                                         </div>
 
@@ -603,6 +687,7 @@ export default function EmployeesPage() {
                                                 <option value="HR Admin">HR Admin</option>
                                                 <option value="Finance">Finance</option>
                                                 <option value="Super Admin">Super Admin</option>
+                                                <option value="CEO">CEO</option>
                                             </select>
                                         </div>
 
@@ -625,12 +710,52 @@ export default function EmployeesPage() {
                                                 onChange={(e) => setFormData({...formData, manager_id: e.target.value})}
                                             >
                                                 <option value="">No Manager (Self)</option>
-                                                {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (e.role === 'Manager' || e.role === 'Super Admin' || e.role === 'HR Admin')).map(manager => (
+                                                {employees.filter(e => String(e.employee_id) !== String(editingEmployee?.employee_id) && (isManager(e) || isSuperAdmin(e) || isHRAdmin(e))).map(manager => (
                                                     <option key={manager.employee_id} value={manager.employee_id}>
                                                         {manager.name} ({manager.role})
                                                     </option>
                                                 ))}
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Employee Type</label>
+                                            <select 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.employee_type}
+                                                onChange={(e) => setFormData({...formData, employee_type: e.target.value})}
+                                            >
+                                                <option value="full_time">Full Time</option>
+                                                <option value="part_time">Part Time</option>
+                                                <option value="Intern">Intern</option>
+                                                <option value="contract">Contract</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Account Status</label>
+                                            <select 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900 appearance-none"
+                                                value={formData.account_status}
+                                                onChange={(e) => setFormData({...formData, account_status: e.target.value})}
+                                            >
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                                <option value="suspended">Suspended</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contract End Date</label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-violet-500/5 focus:border-violet-600 transition-all font-bold text-slate-900"
+                                                value={formData.contract_end_date}
+                                                onChange={(e) => setFormData({...formData, contract_end_date: e.target.value})}
+                                                disabled={formData.employee_type !== 'contract'}
+                                            />
                                         </div>
                                     </div>
                                 </div>

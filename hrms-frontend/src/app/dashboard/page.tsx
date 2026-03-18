@@ -213,7 +213,7 @@ export default function DashboardPage() {
                                 Approval Needed
                             </h2>
                             <div className="grid grid-cols-1 gap-3">
-                                {stats?.pending_leaves_list?.map((leave: any) => (
+                                {stats?.pending_leaves_list?.filter(Boolean).map((leave: any) => (
                                     <ApprovalItem 
                                         key={leave.request_id} 
                                         data={leave} 
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                                         onReject={() => handleAction(leave.request_id, 'leave', 'reject')}
                                     />
                                 ))}
-                                {stats?.pending_expenses_list?.map((expense: any) => (
+                                {stats?.pending_expenses_list?.filter(Boolean).map((expense: any) => (
                                     <ApprovalItem 
                                         key={expense.expense_id} 
                                         data={expense} 
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="p-4 md:p-5 divide-y divide-slate-50">
                             {stats?.latest_announcements?.length > 0 ? (
-                                stats.latest_announcements.map((ann: any) => (
+                                stats.latest_announcements.filter(Boolean).map((ann: any) => (
                                     <AnnouncementRow key={ann.id} announcement={ann} />
                                 ))
                             ) : (
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="space-y-5 relative before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-[1.5px] before:bg-slate-50">
                             {stats?.recent_notifications?.length > 0 ? (
-                                stats.recent_notifications.slice(0, 4).map((notif: any) => (
+                                stats.recent_notifications.filter(Boolean).slice(0, 4).map((notif: any) => (
                                     <div key={notif.id} className="relative pl-7 group">
                                         <div className={`absolute left-0 top-1 w-5 h-5 rounded-full border-2 bg-white z-10 flex items-center justify-center transition-all ${
                                             notif.title.toLowerCase().includes('approved') ? 'border-emerald-500' :
