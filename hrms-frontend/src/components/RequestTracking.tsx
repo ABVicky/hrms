@@ -37,7 +37,7 @@ export default function RequestTracking() {
     }, [user?.employee_id]);
 
     const getStatusStyles = (status: string) => {
-        const s = status.toLowerCase();
+        const s = (status || "").toLowerCase();
         if (s.includes('approved')) return 'bg-emerald-50 text-emerald-600 border-emerald-100';
         if (s.includes('rejected')) return 'bg-rose-50 text-rose-600 border-rose-100';
         if (s.includes('review') || s.includes('pending')) return 'bg-amber-50 text-amber-600 border-amber-100';
@@ -45,7 +45,7 @@ export default function RequestTracking() {
     };
 
     const getStatusIcon = (status: string) => {
-        const s = status.toLowerCase();
+        const s = (status || "").toLowerCase();
         if (s.includes('approved')) return <CheckCircle size={12} />;
         if (s.includes('rejected')) return <XCircle size={12} />;
         if (s.includes('review') || s.includes('pending')) return <Clock size={12} />;
@@ -104,7 +104,7 @@ export default function RequestTracking() {
                                         <div className="flex items-center gap-2">
                                             <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusStyles(request.status)} flex items-center gap-1.5`}>
                                                 {getStatusIcon(request.status)}
-                                                {request.status.replace('_', ' ')}
+                                                {request.status?.replace('_', ' ') || "Pending"}
                                             </span>
                                             <span className="text-[9px] font-bold text-slate-400 uppercase truncate">{request.form_type}</span>
                                         </div>

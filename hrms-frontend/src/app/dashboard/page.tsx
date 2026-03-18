@@ -117,7 +117,7 @@ export default function DashboardPage() {
                 <div className="relative z-10 px-5 md:px-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">{greeting.text}, {user?.name.split(' ')[0]}</span>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">{greeting.text}, {user?.name?.split(' ')[0] || 'User'}</span>
                         </div>
                         <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight leading-none">
                             Your <span className="text-rose-400">Workspace</span>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                             <MobileQuickLink href="/dashboard/attendance" icon={HistoryIcon} label="Attendance" color="text-rose-600 bg-rose-50" />
                             <MobileQuickLink href="/dashboard/leaves" icon={Calendar} label="Leave" color="text-emerald-600 bg-emerald-50" />
                             <MobileQuickLink href="/dashboard/salary" icon={IndianRupee} label="Salary" color="text-violet-600 bg-violet-50" />
-                            <MobileQuickLink href="/dashboard/profile" icon={Users} label="Team" color="text-cyan-600 bg-cyan-50" />
+                            <MobileQuickLink href="/dashboard/employees" icon={Users} label="Team" color="text-cyan-600 bg-cyan-50" />
                         </div>
                     </section>
                     
@@ -196,10 +196,10 @@ export default function DashboardPage() {
                                 />
                                 <StatCard 
                                     label="Alerts" 
-                                    value={stats?.recent_notifications?.filter((n: any) => !n.read).length || 0} 
+                                    value={stats?.recent_notifications?.filter((n: any) => !n.read)?.length || 0} 
                                     icon={Megaphone} 
                                     variant="violet"
-                                    highlight={(stats?.recent_notifications?.filter((n: any) => !n.read).length || 0) > 0}
+                                    highlight={(stats?.recent_notifications?.filter((n: any) => !n.read)?.length || 0) > 0}
                                 />
                             </>
                         )}
@@ -272,7 +272,7 @@ export default function DashboardPage() {
                             <QuickLink href="/dashboard/attendance" icon={HistoryIcon} label="Attendance" color="bg-rose-50 text-rose-600" />
                             <QuickLink href="/dashboard/leaves" icon={Calendar} label="Leave" color="bg-emerald-50 text-emerald-600" />
                             <QuickLink href="/dashboard/salary" icon={IndianRupee} label="Salary" color="bg-violet-50 text-violet-600" />
-                            <QuickLink href="/dashboard/profile" icon={Users} label="Team" color="bg-cyan-50 text-cyan-600" />
+                            <QuickLink href="/dashboard/employees" icon={Users} label="Team" color="bg-cyan-50 text-cyan-600" />
                         </div>
                     </section>
 
